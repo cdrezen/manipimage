@@ -7,21 +7,19 @@
 /* Une fonction tImage initImage(int haut, int larg) qui retourne une structure tImage dans laquelle les champs hauteur
 et largeur sont initialis ́es avec les valeurs donn ́ees en param`etre et qui r ́ealise l’allocation du tableau img pour haut lignes de larg pixels.
 Les champs type et maxval seront initialis ́es `a 0. */
-tImage initImage(int haut, int larg)
+tImage initImage(int haut, int larg, char typ[3], int vmax)
 {
     tImage image;
     image.hauteur = haut;
     image.largeur = larg;
-    /*image.type = 0;       /!\   */
-    image.maxval = 0;
-    //image.img = malloc(haut * sizeof(tPixel) * haut * larg * sizeof(tPixel));
+    strcpy(image.type, typ);
+    image.maxval = vmax;
+
     image.img = (tPixel**)malloc(larg * haut * sizeof(tPixel));
     for (int i = 0; i < larg; i++)
     {
         image.img[i] = (tPixel*)malloc(haut * sizeof(tPixel));
     }
-
-    // printf("sizeof: %lu\n", sizeof(tPixel));
 
     return image;
 }
@@ -30,14 +28,7 @@ dans une nouvelle image initialis ́ee et allou ́ee avec les mˆemes caract ́e
 que l’image donn ́ee en param`etre et dans laquelle tous les pixels sont copi ́es. La fonction retourne la copie de l’image. */
 tImage copieImage(tImage im)
 {
-    tImage image = initImage(im.hauteur, im.largeur);
-    //image.hauteur = im.hauteur; image.largeur = im.largeur; 
-    image.maxval = im.maxval;
-    strcpy(image.type, im.type);
-
-    //int size = im.hauteur * im.largeur * sizeof(tPixel);
-    //image.img = malloc(size);
-    //memcpy(image.img, im.img, size);
+    tImage image = initImage(im.hauteur, im.largeur, im.type, im.maxval);
 
     for (int i = 0; i < im.largeur; i++)
         for (int j = 0; j < im.hauteur; j++)
@@ -53,25 +44,28 @@ un passage `a la ligne vous pouvez utiliser la fonction fscanf pour les r ́ecup
 
 tImage chargePpm1(char* fichier)
 {
-    int largeur = 0, hauteur = 0;
+    int largeur = 0, hauteur = 0, maxval = 0;
     char str[256];
 
     FILE* pFile = fopen(fichier, "r");
 
     fscanf(pFile, "%3s\n", str);//copie le type P1/P2/P3.. + terminateur null
-    fscanf(pFile, "%[^\n]\n", str + 3);//skip la ligne de commentaire
+
+    if (str[2] != 0) 
+    { 
+        perror("Type invalide (plus de 2 caractères)"); 
+    }
+
+    fscanf(pFile, "%[^\n]\n", str + 3);//enregistre la ligne de commentaire sans écraser le type en l'écrivant à l'adresse + 3 de str (3 = longueur de type)
     //printf("%s\n", str);//
 
     fscanf(pFile, "%d %d\n", &largeur, &hauteur);
+    fscanf(pFile, "%d\n", &maxval);
 
-    tImage image = initImage(hauteur, largeur);
+    tImage image = initImage(hauteur, largeur, str, maxval);
 
-    image.largeur = largeur;
-    image.hauteur = hauteur;
-    strcpy(image.type, str);
 
     //printf("%s %i %i\n", image.type, image.largeur, image.hauteur);//test
-    fscanf(pFile, "%s\n", str);//skip la ligne "255"
 
     int i = 0, val = 0, x = 0, y = 0;
     while (fscanf(pFile, "%d\n", &val) != EOF)
@@ -111,7 +105,7 @@ tImage chargePpm1(char* fichier)
 
 tImage chargePpm(char* fichier)
 {
-    int largeur = 0, hauteur = 0;
+    int largeur = 0, hauteur = 0, vmax = 0;
     char str[256];
 
     FILE* pFile = fopen(fichier, "r");
@@ -122,12 +116,11 @@ tImage chargePpm(char* fichier)
 
     fscanf(pFile, "%d %d\n", &largeur, &hauteur);
 
-    tImage image = initImage(hauteur, largeur);
-    strcpy(image.type, str);
+    fscanf(pFile, "%s\n", &vmax);//skip la ligne "255"
+
+    tImage image = initImage(hauteur, largeur, str, vmax);
 
     //printf("%s %i %i\n", image.type, image.largeur, image.hauteur);//test
-    fscanf(pFile, "%s\n", str);//skip la ligne "255"
-
 
     for (int i = 0; i < largeur * hauteur; i++)
     {

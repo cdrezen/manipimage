@@ -1,4 +1,5 @@
 #include "manipimage.h"
+#include "stdio.h"
 
 int main()
 {
