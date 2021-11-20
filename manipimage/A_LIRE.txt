@@ -1,0 +1,12 @@
+S2IN324-devoir-sujet.pdf : énoncé du devoir
+
+pourDevoir.c : définition des types pour stocker une image en mémoire
+
+image1.ppm et image2.ppm : deux images de même dimension pour tester votre programme
+
+imagecachee.ppm : cette image dissimule une autre image, saurez-vous la retrouver ?
+
+textecache.ppm : cette image dissimule le texte du code source du devoir ... saurez-vous le retrouver ?
+
+
+ATTENTION : les fichiers d'image et de texte utilisés pour tester votre programme doivent être placés dans le dossier qui contient l'exécutable de votre programme.
