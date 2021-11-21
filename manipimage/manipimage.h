@@ -2,13 +2,27 @@
 // Definition des types
 // ************************************************
 
+// Un enum qui servira a identifier les couleur selon la ligne
+enum
+{
+    ROUGE,
+    VERT,
+    BLEU
+};
+
 // Le type tPixel
 typedef struct pixel {
-    int r;
-    int v;
-    int b;
+    unsigned char r;
+    unsigned char v;
+    unsigned char b;
 } tPixel;
 
+// Le type tPixelS
+typedef struct pixelS {
+    unsigned short r;
+    unsigned short v;
+    unsigned short b;
+} tPixelS;
 
 // Le type representant une image en memoire
 typedef struct image {
@@ -19,7 +33,9 @@ typedef struct image {
     tPixel** img;       // Le tableau des pixels
 } tImage;
 
-tImage initImage(int haut, int larg);
+static const struct image ImageVide = { 0 };
+
+tImage initImage(int haut, int larg, char typ[3], int vmax);
 
 tImage copieImage(tImage im);
 

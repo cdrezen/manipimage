@@ -1,5 +1,4 @@
-﻿
-#include "stdlib.h"
+﻿#include "stdlib.h"
 #include "stdio.h"
 #include "string.h"
 #include "manipimage.h"
@@ -15,10 +14,21 @@ tImage initImage(int haut, int larg, char typ[3], int vmax)
     strcpy(image.type, typ);
     image.maxval = vmax;
 
-    image.img = (tPixel**)malloc(larg * haut * sizeof(tPixel));
+    int size = larg * haut * sizeof(tPixel);
+
+    if (size == 0) 
+    { 
+        perror("L'image ne peut pas avoir 0 de hauteur ou de largeur.");
+        return image; 
+    }
+
+    //  Allocation de la mémoire pour le tPixel**
+    image.img = (tPixel**) malloc(size);
+
+    //  Allocation de la mémoire pour les sous tableaux dans le tPixel**
     for (int i = 0; i < larg; i++)
     {
-        image.img[i] = (tPixel*)malloc(haut * sizeof(tPixel));
+        image.img[i] = (tPixel*) malloc(size / larg);//taille = haut * sizeof(tPixel)
     }
 
     return image;
@@ -47,56 +57,46 @@ tImage chargePpm1(char* fichier)
     int largeur = 0, hauteur = 0, maxval = 0;
     char str[256];
 
-    FILE* pFile = fopen(fichier, "r");
+    FILE* pFile = fopen(fichier, "r");// Ouvre le ficher avec le mode de lecture.
 
-    fscanf(pFile, "%3s\n", str);//copie le type P1/P2/P3.. + terminateur null
+    //  Copie le type P1/P2/P3.. + terminateur null
+    fscanf(pFile, "%3s\n", str);
+    //  Enregistre la ligne de commentaire sans écraser le type en l'écrivant à l'adresse + 3 de str(3 = longueur de tImage.type)
+    //  Si on fait un strcpy avec cette chaine comme source, ça s'arettera au terminateur NULL. Cela evite de déclarer une 2eme chaine seulement pour une ligne ignorée
+    fscanf(pFile, "%[^\n]\n", str + 3);
 
-    if (str[2] != 0) 
-    { 
-        perror("Type invalide (plus de 2 caractères)"); 
-    }
-
-    fscanf(pFile, "%[^\n]\n", str + 3);//enregistre la ligne de commentaire sans écraser le type en l'écrivant à l'adresse + 3 de str (3 = longueur de type)
-    //printf("%s\n", str);//
-
-    fscanf(pFile, "%d %d\n", &largeur, &hauteur);
-    fscanf(pFile, "%d\n", &maxval);
+    //  Copie la largeur, hauteur et la valeur maximum des pixels
+    fscanf(pFile, "%d %d\n%d\n", &largeur, &hauteur, &maxval);
 
     tImage image = initImage(hauteur, largeur, str, maxval);
 
-
-    //printf("%s %i %i\n", image.type, image.largeur, image.hauteur);//test
-
     int i = 0, val = 0, x = 0, y = 0;
+    //  Lire les entiers tant que l'on est pas arrivé à la fin du fichier
     while (fscanf(pFile, "%d\n", &val) != EOF)
     {
-        switch (i % 3)
+        switch (i % 3)// Les valeurs rouge vert et bleu sont à la suite donc on peut faire 'position % 3' pour retrouver à quelle couleur les valeurs correspondent
         {
-        case 0:
+        case ROUGE:
             image.img[x][y].r = val;
             break;
-        case 1:
+        case VERT:
             image.img[x][y].v = val;
             break;
-        case 2:
+        case BLEU:
             image.img[x][y].b = val;
-            x++;
+            x++;// Après le bleu on passe à un nouveau pixel
             break;
         }
 
         i++;
 
+        //  Si on a fini une ligne de pixel on passe à celle d'en dessous
         if (x == largeur)
         {
             x = 0;
             y++;
         }
     }
-
-    //printf("%i\n", image.img[0][0].r);
-    //printf("%i\n", image.img[image.largeur - 1][image.hauteur-1].b);
-    //printf("%d\n", (i - 1) / 3);
-
 
     fclose(pFile);
 
@@ -108,43 +108,58 @@ tImage chargePpm(char* fichier)
     int largeur = 0, hauteur = 0, vmax = 0;
     char str[256];
 
-    FILE* pFile = fopen(fichier, "r");
+    FILE* pFile = fopen(fichier, "r");// Ouvre le ficher avec le mode de lecture.
 
-    fscanf(pFile, "%3s\n", str);//copie le type P1/P2/P3.. + terminateur null
-    fscanf(pFile, "%[^\n]\n", str + 3);//skip la ligne de commentaire
-    //printf("%s\n", str);//
+    //  Copie le type P1/P2/P3.. + terminateur null et verifie si ça fini bien par NULL
+    if (!fscanf(pFile, "%3s\n", str) || str[2] != 0)
+    {
+        perror("Type invalide ou à plus de 2 caractères.");
+        return ImageVide;
+    }
 
-    fscanf(pFile, "%d %d\n", &largeur, &hauteur);
+    //  Enregistre la ligne de commentaire sans écraser le tImage.type en l'écrivant à l'adresse + 3 de  la chaine str (3 = longueur de tImage.type)
+    if (!fscanf(pFile, "%[^\n]\n", str + 3))
+    {
+        perror("Erreur lors de la lecture de la ligne de commentaire.");
+        return ImageVide;
+    }
 
-    fscanf(pFile, "%s\n", &vmax);//skip la ligne "255"
+    //  Copie la largeur, hauteur et la valeur maximum des pixels
+    if (!fscanf(pFile, "%d %d\n%d\n", &largeur, &hauteur, &vmax))
+    {
+        perror("Erreur lors de la lecture des entiers de parametre.");
+        return ImageVide;
+    }
+
+    if (vmax > 255)// Le type de tPixel.r .v et .b est unsigned char. Il faudrait faire un autre struct dans le .h pour prendre en charge des plus grande valeurs
+    {
+        perror("Valeurs supérieur à 255 non pris en charge.");
+    }
 
     tImage image = initImage(hauteur, largeur, str, vmax);
 
-    //printf("%s %i %i\n", image.type, image.largeur, image.hauteur);//test
-
+    //  Lecture pixel par pixel des valeurs RVB:
     for (int i = 0; i < largeur * hauteur; i++)
     {
         unsigned char r = 0, v = 0, b = 0;
-        if (fscanf(pFile, "%hhu\n", &r)
-            && fscanf(pFile, "%hhu\n", &v)
-            && fscanf(pFile, "%hhu\n", &b))
+        if (fscanf(pFile, "%hhu\n", &r)//       lecture du rouge (%hhu -> unsigned char (0 à 255) enregisté sur 3 caractères)
+            && fscanf(pFile, "%hhu\n", &v)//    lecture du vert
+            && fscanf(pFile, "%hhu\n", &b))//   lecture du bleu
         {
+            //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
             int x = i % largeur;
             int y = i / largeur;
+            //  Affectation des valeurs avec les indexes correspondant à la position.
             image.img[x][y].r = r;
             image.img[x][y].v = v;
             image.img[x][y].b = b;
         }
         else
-        {
-            perror("Fichier invalide ou corrompu.");// (%d)", ferror(pFile));
+        {   //  Si il y a une erreur sur un des pixel lance une erreur et arrete la lecture du fichier.
+            perror("Lecture des pixels: Fichier invalide ou corrompu ou mauvais nombre de valeurs.");
             break;
         }
     }
-
-    //printf("%i\n", image.img[0][0].r);
-    //printf("%i\n", image.img[image.largeur - 1][image.hauteur-1].b);
-    //printf("%d\n", (i - 1) / 3);
 
     fclose(pFile);
 
@@ -153,7 +168,13 @@ tImage chargePpm(char* fichier)
 
 void sauvePpm(char* nom, tImage im)
 {
+    //  On ouvre le fichier en mode écriture
     FILE* fichier = fopen(nom, "w");
+
+    if (im.maxval > 255)// Le type de tPixel.r .v et .b est unsigned char. Il faudrait faire un autre struct dans le .h pour prendre en charge des plus grande valeurs
+    {
+        perror("Valeurs supérieur à 255 non pris en charge.");
+    }
 
     fprintf(fichier, "%s\n", im.type);
 
@@ -161,12 +182,15 @@ void sauvePpm(char* nom, tImage im)
 
     fprintf(fichier, "%d %d\n", im.largeur, im.hauteur);
 
-    fprintf(fichier, "255\n");
+    fprintf(fichier, "%d\n", im.maxval);
 
+    //  Ecriture des 3 couleurs pixel par pixel dans le fichier
     for (int i = 0; i < im.largeur * im.hauteur; i++)
     {
+        //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
         int x = i % im.largeur;
         int y = i / im.largeur;
+        //  Affectation des valeurs avec les indexes correspondant à la position.
         fprintf(fichier, "%hhu\n", im.img[x][y].r);
         fprintf(fichier, "%hhu\n", im.img[x][y].v);
         fprintf(fichier, "%hhu\n", im.img[x][y].b);
