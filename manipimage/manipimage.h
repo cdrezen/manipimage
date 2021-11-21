@@ -1,3 +1,6 @@
+//40007337  Drezen Corentin
+//40003483  Pallard Benoît
+
 // ************************************************
 // Definition des types
 // ************************************************
@@ -34,7 +37,7 @@ typedef struct image {
     //tPixelS** imgS;     // Le tableau des pixels ushort
 } tImage;
 
-static const struct image ImageVide = { 0 };
+static const struct image ImageVide = { 0, 0 };
 
 tImage initImage(int haut, int larg, char typ[3], int vmax);
 
