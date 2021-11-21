@@ -141,6 +141,7 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="manipimage.c" />
+    <ClCompile Include="manipimage1.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="manipimage.h" />
