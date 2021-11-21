@@ -1,5 +1,6 @@
-﻿#include "stdio.h"
-#include "string.h"
+﻿#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "manipimage.h"
 
 /* Une fonction tImage initImage(int haut, int larg) qui retourne une structure tImage dans laquelle les champs hauteur
