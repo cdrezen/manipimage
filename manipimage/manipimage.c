@@ -49,11 +49,6 @@ tImage copieImage(tImage im)
     return image;
 }
 
-/* Ecrivez une fonction tImage chargePnm(char* fichier) qui charge dans une structure tImage
-l’image contenue dans le fichier donn ́ee en param`etre. Une partie du code est donn ́ee, vous devez le compl ́eter.
-Apr`es avoir pass ́e les lignes de commentaire, chaque donn ́ee  ́etant s ́epar ́ee de la suivante par un espace ou
-un passage `a la ligne vous pouvez utiliser la fonction fscanf pour les r ́ecup ́erer. */
-
 tImage chargePpm1(char* fichier)
 {
     int largeur = 0, hauteur = 0, maxval = 0;
@@ -104,6 +99,11 @@ tImage chargePpm1(char* fichier)
 
     return image;
 }
+
+/* Ecrivez une fonction tImage chargePnm(char* fichier) qui charge dans une structure tImage
+l’image contenue dans le fichier donn ́ee en param`etre. Une partie du code est donn ́ee, vous devez le compl ́eter.
+Apr`es avoir pass ́e les lignes de commentaire, chaque donn ́ee  ́etant s ́epar ́ee de la suivante par un espace ou
+un passage `a la ligne vous pouvez utiliser la fonction fscanf pour les r ́ecup ́erer. */
 
 tImage chargePpm(char* fichier)
 {
@@ -168,6 +168,11 @@ tImage chargePpm(char* fichier)
     return image;
 }
 
+/*Ecrivez une fonction void sauvePpm(char* nom, tImage im) qui cr ́eer un fichier .ppm dont le nom est donn ́e en
+param`etre et dans lequel vous sauvez le contenu de la structure tImage donn ́ee en param`etre en respectant le format d’un
+fichier .ppm.
+Vous ajouterez dans ce fichier une ligne de commentaire contenant votre nom et pr ́enom pour renseigner le cr ́eateur du
+fichier.*/
 void sauvePpm(char* nom, tImage im)
 {
     //  On ouvre le fichier en mode écriture
