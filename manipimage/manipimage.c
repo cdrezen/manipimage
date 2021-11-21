@@ -11,7 +11,7 @@ tImage initImage(int haut, int larg, char typ[3], int vmax)
     tImage image;
     image.hauteur = haut;
     image.largeur = larg;
-    strcpy(image.type, typ);
+    strcpy(image.type, typ);//copie de la chaine de char 'typ' dans 'image.type'
     image.maxval = vmax;
 
     int size = larg * haut * sizeof(tPixel);
@@ -38,8 +38,10 @@ dans une nouvelle image initialis ́ee et allou ́ee avec les mˆemes caract ́e
 que l’image donn ́ee en param`etre et dans laquelle tous les pixels sont copi ́es. La fonction retourne la copie de l’image. */
 tImage copieImage(tImage im)
 {
+    //  Initialisation d'une image avec les mêmes paramettres
     tImage image = initImage(im.hauteur, im.largeur, im.type, im.maxval);
 
+    //  Copie des valeurs des pixels dans la nouvelle image
     for (int i = 0; i < im.largeur; i++)
         for (int j = 0; j < im.hauteur; j++)
             image.img[i][j] = im.img[i][j];
