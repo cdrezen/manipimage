@@ -1,4 +1,7 @@
-﻿#include <stdio.h>
+﻿//40007337  Drezen Corentin
+//40003483  Pallard Benoît
+
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include "manipimage.h"
@@ -55,7 +58,7 @@ un passage `a la ligne vous pouvez utiliser la fonction fscanf pour les r ́ecup
 tImage chargePpm(char* fichier)
 {
     int largeur = 0, hauteur = 0, vmax = 0;
-    char str[256];
+    char str[3];
 
     FILE* pFile = fopen(fichier, "r");// Ouvre le ficher avec le mode de lecture.
 
@@ -66,8 +69,8 @@ tImage chargePpm(char* fichier)
         return ImageVide;
     }
 
-    //  Enregistre la ligne de commentaire sans écraser le tImage.type en l'écrivant à l'adresse + 3 de  la chaine str (3 = longueur de tImage.type)
-    if (!fscanf(pFile, "%[^\n]\n", str + 3))
+    //  Saute le commentaire, %* : pas stocké dans une variable, [^\n] : pattern 'tout sauf /n'
+    if (fscanf(pFile, "%*[^\n]\n") != 0)
     {
         perror("Erreur lors de la lecture de la ligne de commentaire.");
         return ImageVide;
