@@ -14,21 +14,29 @@ tImage initImage(int haut, int larg, char typ[3], int vmax)
     strcpy(image.type, typ);//copie de la chaine de char 'typ' dans 'image.type'
     image.maxval = vmax;
 
-    int size = larg * haut * sizeof(tPixel);
-
-    if (size == 0) 
+    if (larg * haut  == 0) 
     { 
         perror("L'image ne peut pas avoir 0 de hauteur ou de largeur.");
         return image; 
     }
 
-    //  Allocation de la mémoire pour le tPixel**
+    /* //Allocation de la mémoire pour le tPixel**
+
+    int size = larg * haut * sizeof(tPixel*);
+
     image.img = (tPixel**) malloc(size);
 
     //  Allocation de la mémoire pour les sous tableaux dans le tPixel**
     for (int i = 0; i < larg; i++)
     {
         image.img[i] = (tPixel*) malloc(size / larg);//taille = haut * sizeof(tPixel)
+    } */
+
+    image.img = malloc(haut * sizeof(tPixel*));
+
+    for (int i = 0; i < haut; i++)
+    {
+        image.img[i] = malloc(larg * sizeof(tPixel));
     }
 
     return image;
@@ -42,8 +50,8 @@ tImage copieImage(tImage im)
     tImage image = initImage(im.hauteur, im.largeur, im.type, im.maxval);
 
     //  Copie des valeurs des pixels dans la nouvelle image
-    for (int i = 0; i < im.largeur; i++)
-        for (int j = 0; j < im.hauteur; j++)
+    for (int i = 0; i < im.hauteur; i++)
+        for (int j = 0; j < im.largeur; j++)
             image.img[i][j] = im.img[i][j];
 
     return image;
@@ -98,12 +106,12 @@ tImage chargePpm(char* fichier)
             && fscanf(pFile, "%hhu\n", &b))//   lecture du bleu
         {
             //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
-            int x = i % largeur;
-            int y = i / largeur;
+            int y = i % hauteur;
+            int x = i / hauteur;
             //  Affectation des valeurs avec les indexes correspondant à la position.
-            image.img[x][y].r = r;
-            image.img[x][y].v = v;
-            image.img[x][y].b = b;
+            image.img[y][x].r = r;
+            image.img[y][x].v = v;
+            image.img[y][x].b = b;
         }
         else
         {   //  Si il y a une erreur sur un des pixel lance une erreur et arrete la lecture du fichier.
@@ -144,12 +152,12 @@ void sauvePpm(char* nom, tImage im)
     for (int i = 0; i < im.largeur * im.hauteur; i++)
     {
         //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
-        int x = i % im.largeur;
-        int y = i / im.largeur;
+        int y = i % im.hauteur;
+        int x = i / im.hauteur;
         //  Affectation des valeurs avec les indexes correspondant à la position.
-        fprintf(fichier, "%hhu\n", im.img[x][y].r);
-        fprintf(fichier, "%hhu\n", im.img[x][y].v);
-        fprintf(fichier, "%hhu\n", im.img[x][y].b);
+        fprintf(fichier, "%hhu\n", im.img[y][x].r);
+        fprintf(fichier, "%hhu\n", im.img[y][x].v);
+        fprintf(fichier, "%hhu\n", im.img[y][x].b);
     }
 
     fclose(fichier);
