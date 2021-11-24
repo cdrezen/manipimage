@@ -17,7 +17,7 @@ typedef struct pixel {
     unsigned char b;
 } tPixel;
 
-// Le type tPixelS pour implémenter des valeurs de couleurs plus grandes plus tard
+// Le type tPixelS pour implï¿½menter des valeurs de couleurs plus grandes plus tard
 typedef struct pixelS {
     unsigned short r;
     unsigned short v;

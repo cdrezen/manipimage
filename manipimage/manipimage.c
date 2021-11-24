@@ -20,20 +20,10 @@ tImage initImage(int haut, int larg, char typ[3], int vmax)
         return image; 
     }
 
-    /* //Allocation de la mémoire pour le tPixel**
-
-    int size = larg * haut * sizeof(tPixel*);
-
-    image.img = (tPixel**) malloc(size);
-
-    //  Allocation de la mémoire pour les sous tableaux dans le tPixel**
-    for (int i = 0; i < larg; i++)
-    {
-        image.img[i] = (tPixel*) malloc(size / larg);//taille = haut * sizeof(tPixel)
-    } */
-
+    //Allocation de la mémoire pour le tPixel**
     image.img = malloc(haut * sizeof(tPixel*));
 
+    // Allocation de la mémoire pour les sous tableaux dans le tPixel**
     for (int i = 0; i < haut; i++)
     {
         image.img[i] = malloc(larg * sizeof(tPixel));
