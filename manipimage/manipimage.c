@@ -94,15 +94,18 @@ tImage chargePpm(char* fichier)
     for (int i = 0; i < largeur * hauteur; i++)
     {
         unsigned char r = 0, v = 0, b = 0;
-        if (fscanf(pFile, "%hhu\n", &r)//       lecture du rouge (%hhu -> unsigned char (0 à 255) enregisté sur 3 caractères)
-            && fscanf(pFile, "%hhu\n", &v)//    lecture du vert
-            && fscanf(pFile, "%hhu\n", &b))//   lecture du bleu
+        if (fscanf(pFile, "%hhu", &r)//       lecture du rouge (%hhu -> unsigned char (0 à 255) enregisté sur 3 caractères)
+            && fscanf(pFile, "%hhu", &v)//    lecture du vert
+            && fscanf(pFile, "%hhu", &b))//   lecture du bleu
         {
             //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
             int y = i % hauteur;
             int x = i / hauteur;
             //  Affectation des valeurs avec les indexes correspondant à la position.
             image.img[y][x].r = r;
+
+            if(image.type[1] <= '2') continue;
+
             image.img[y][x].v = v;
             image.img[y][x].b = b;
         }
@@ -149,9 +152,96 @@ void sauvePpm(char* nom, tImage im)
         int x = i / im.hauteur;
         //  Affectation des valeurs avec les indexes correspondant à la position.
         fprintf(fichier, "%hhu\n", im.img[y][x].r);
+
+        if(im.type[1] <= '2') continue;// Seulement une valeur par pixel pour P2 et P1
+
         fprintf(fichier, "%hhu\n", im.img[y][x].v);
         fprintf(fichier, "%hhu\n", im.img[y][x].b);
     }
 
     fclose(fichier);
+}
+
+// 2.1 Niveaux de gris
+
+float luminance(tPixel p)
+{
+    return (0.2125f * p.r) + (0.7154f * p.v) + (0.0721f * p.b);
+}
+
+tImage niveauGris(tImage im)
+{
+    // Faire une copie et remplacer le type par P2 (niveau de gris) qui ne prend qu'une valeur par pixel cf https://fr.wikipedia.org/wiki/Portable_pixmap#PGM
+    // sauvepPpm et chargePpm modifiés pour gérer les P2
+    tImage image = initImage(im.hauteur, im.largeur, "P2", im.maxval);
+
+    //  Copie des valeurs des pixels luminant dans la nouvelle image
+    for (int i = 0; i < im.hauteur; i++)
+    {
+        for (int j = 0; j < im.largeur; j++)
+        {
+            // Change la valeur en niveau de gris
+            unsigned char lum = (unsigned char)luminance(im.img[i][j]);
+            image.img[i][j].r = lum;
+            // inutile pour les autres valeurs mais permeterai aussi de l'enregistrer en P3 facilement
+            image.img[i][j].v = lum;//
+            image.img[i][j].b = lum;//
+        }
+    }
+
+    return image;
+}
+
+tPixel floumoy(tImage im, int i, int j, int r)
+{
+    int R = 0, V = 0, B = 0;
+    int n = 0;
+
+    // if(i > 256)
+    // {
+    // printf("x { j - r: %d, j + r: %d, MAX(j - r, 0): %d, MIN(j + r, im.largeur): %d, }\n", j - r, j + r, MAX(j - r, 0), MIN(r + j, im.largeur));
+    // printf("y { i - r: %d, i + r: %d, MAX(i - r, 0): %d, MIN(i + r, im.largeur): %d, }\n", i - r, i + r, MAX(i - r, 0), MIN(r + i, im.largeur));
+    // }
+    //printf("y: %d %d", MAX(i - r, 0), MIN(r + i, im.hauteur));
+
+    //MIN et MAX defini dans manipimage.h
+    for(int y = MAX(i - r, 0); y < MIN(i + r, im.hauteur); y++)
+    {
+        for(int x = MAX(j - r, 0); x < MIN(j + r, im.largeur); x++)
+        {
+            R += im.img[y][x].r;
+            V += im.img[y][x].v;
+            B += im.img[y][x].b;
+            n++;
+        }
+    }
+
+    if(n > 0) 
+    { 
+        R /= n; 
+        V /= n; 
+        B /= n; 
+    }
+
+    return (tPixel)
+    { 
+        (unsigned char)R, 
+        (unsigned char)V, 
+        (unsigned char)B 
+    };
+}
+
+tImage flou(tImage im, int r)
+{
+    tImage image = copieImage(im);
+
+    for (int i = 0; i < im.hauteur; i++)
+    {
+        for (int j = 0; j < im.largeur; j++)
+        {
+            image.img[i][j] = floumoy(im, i, j, r); 
+        }
+    }
+
+    return image;
 }

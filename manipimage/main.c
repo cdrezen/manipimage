@@ -1,5 +1,5 @@
 //40007337  Drezen Corentin
-//40003483  Pallard Benoît
+//40003483  Pallard BenoÃ®t
 
 #pragma
 #include <stdio.h>
@@ -8,12 +8,13 @@
 
 int main()
 {
+    /*
     char reponse[256];
 
-    printf("Choisissez un fichier.ppm à ouvrir :\n");
+    printf("Choisissez un fichier.ppm ï¿½ ouvrir :\n");
 
-    if (!scanf("%s", &reponse)// Verifie si scanf n'a pas échoué.
-        || strstr(reponse, ".ppm") - (int)reponse != strlen(reponse) - 4)// Verifie si l'extention est bien .ppm. (strstr retourne un pointeur vers '.ppm' dans la chaine path ou nullptr si non trouvé)
+    if (!scanf("%s", &reponse)// Verifie si scanf n'a pas ï¿½chouï¿½.
+        || strstr(reponse, ".ppm") - (int)reponse != strlen(reponse) - 4)// Verifie si l'extention est bien .ppm. (strstr retourne un pointeur vers '.ppm' dans la chaine path ou nullptr si non trouvï¿½)
     {
         perror("Vous devez entrez un nom de fichier .ppm");
         return main();
@@ -23,20 +24,20 @@ int main()
 
     tImage im = chargePpm(reponse);
 
-    if(im.largeur == 0 || im.hauteur == 0)// Verifie si chargePpm n'a pas échoué.
+    if(im.largeur == 0 || im.hauteur == 0)// Verifie si chargePpm n'a pas ï¿½chouï¿½.
     {
         perror("Erreur lors du chargement du fichier.");
         return -1;
     }
 
-    printf("Fichier importé.");
+    printf("Fichier importï¿½.");
 
     char repAttendue = 1;
-    //  Attend une réponse valide à "Voulez vous créer une copie du fichier ?"
+    //  Attend une rï¿½ponse valide ï¿½ "Voulez vous crï¿½er une copie du fichier ?"
     while (repAttendue && reponse[0] != 'y' && reponse[0] != 'n' && reponse[0] != 'o')
     {
         repAttendue = 1;
-        printf("\nVoulez vous créer une copie du fichier ? (y/n):");
+        printf("\nVoulez vous crï¿½er une copie du fichier ? (y/n):");
         if (!scanf("%s", &reponse)) { repAttendue = 1; }
         else { repAttendue = -1; }
     }
@@ -45,7 +46,7 @@ int main()
     {
         printf("Choisissez un nom de fichier pour l'enregister :\n");
 
-        if (!scanf("%s", &reponse))//   Verifie si scanf n'a pas échoué.// 
+        if (!scanf("%s", &reponse))//   Verifie si scanf n'a pas ï¿½chouï¿½.// 
         {
             perror("Vous devez entrez un nom de fichier\n"); 
             strcpy(reponse, "sauvegarde.ppm");
@@ -59,14 +60,14 @@ int main()
 
         printf("Sauvegarde du fichier...\n");
         sauvePpm(reponse, im);
-        printf("Fichier sauvegardé sous le nom %s\n", reponse);
+        printf("Fichier sauvegardï¿½ sous le nom %s\n", reponse);
     }
 
     repAttendue = 1;
     while (repAttendue && reponse[0] != 'y' && reponse[0] != 'n' && reponse[0] != 'o')
     {
         repAttendue = 1;
-        printf("\nVoulez vous créer une copie en mémoire du fichier puis l'enregistrer ? (y/n):");
+        printf("\nVoulez vous crï¿½er une copie en mï¿½moire du fichier puis l'enregistrer ? (y/n):");
         if (!scanf(" %s", &reponse)) { repAttendue = 1; }
         else { repAttendue = -1; }
     }
@@ -75,7 +76,7 @@ int main()
     {
         tImage im1 = copieImage(im);
 
-        if (im1.largeur == 0 || im1.hauteur == 0)// Verifie si copieImage n'a pas échoué.
+        if (im1.largeur == 0 || im1.hauteur == 0)// Verifie si copieImage n'a pas ï¿½chouï¿½.
         {
             perror("Erreur lors de la copie de l'image.");
             return -1;
@@ -83,6 +84,9 @@ int main()
 
         sauvePpm("im1.ppm", im1);
     }
-    
+    */
+    tImage im = chargePpm("image1.ppm");
+    tImage imFlou = flou(im, 7);
+    sauvePpm("imFlou.ppm", imFlou);
     return 0;
 }

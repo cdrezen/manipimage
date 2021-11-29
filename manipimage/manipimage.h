@@ -1,5 +1,9 @@
 //40007337  Drezen Corentin
-//40003483  Pallard Benoît
+//40003483  Pallard Benoï¿½t
+
+//Fonction min et max
+#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MAX(a,b) (((a)>(b))?(a):(b))
 
 // ************************************************
 // Definition des types
@@ -43,8 +47,14 @@ tImage initImage(int haut, int larg, char typ[3], int vmax);
 
 tImage copieImage(tImage im);
 
-tImage chargePpm1(char* fichier);
-
 tImage chargePpm(char* fichier);
 
 void sauvePpm(char* nom, tImage im);
+
+float luminance(tPixel p);
+
+tImage niveauGris(tImage im);
+
+tPixel floumoy(tImage im, int i, int j, int r);
+
+tImage flou(tImage im, int r);
