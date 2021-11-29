@@ -85,8 +85,8 @@ int main()
         sauvePpm("im1.ppm", im1);
     }
     */
-    tImage im = chargePpm("image1.ppm");
-    tImage imFlou = flou(im, 10);
-    sauvePpm("imFlou.ppm", imFlou);
+
+    tImage im = chargePnm("textecache.ppm");
+    reveleTexte(im, "dump.txt");
     return 0;
 }

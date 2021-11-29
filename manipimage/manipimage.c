@@ -55,12 +55,18 @@ l’image contenue dans le fichier donn ́ee en param`etre. Une partie du code e
 Apr`es avoir pass ́e les lignes de commentaire, chaque donn ́ee  ́etant s ́epar ́ee de la suivante par un espace ou
 un passage `a la ligne vous pouvez utiliser la fonction fscanf pour les r ́ecup ́erer. */
 
-tImage chargePpm(char* fichier)
+tImage chargePnm(char* fichier)
 {
     int largeur = 0, hauteur = 0, vmax = 0;
     char str[3];
 
-    FILE* pFile = fopen(fichier, "r");// Ouvre le ficher avec le mode de lecture.
+    FILE* pFile;// Ouvre le ficher avec le mode de lecture.
+
+    if (!(pFile = fopen(fichier, "r")))
+    {
+        fprintf(stderr, "\nErreur dans sauvePnm : %s innaccessible", fichier);
+        return ImageVide;
+    }
 
     //  Copie le type P1/P2/P3.. + terminateur null et verifie si ça fini bien par NULL
     if (!fscanf(pFile, "%3s\n", str) || str[2] != 0)
@@ -127,10 +133,16 @@ param`etre et dans lequel vous sauvez le contenu de la structure tImage donn ́e
 fichier .ppm.
 Vous ajouterez dans ce fichier une ligne de commentaire contenant votre nom et pr ́enom pour renseigner le cr ́eateur du
 fichier.*/
-void sauvePpm(char* nom, tImage im)
+void sauvePnm(char* nom, tImage im)
 {
     //  On ouvre le fichier en mode écriture
-    FILE* fichier = fopen(nom, "w");
+    FILE* fichier;
+
+    if (!(fichier = fopen(nom, "w")))
+    {
+        fprintf(stderr, "\nErreur dans sauvePnm : %s innaccessible", nom);
+        return;
+    }
 
     if (im.maxval > 255)// Le type de tPixel.r .v et .b est unsigned char. Il faudrait faire un autre struct dans le .h pour prendre en charge des plus grande valeurs
     {
@@ -164,7 +176,7 @@ void sauvePpm(char* nom, tImage im)
     fclose(fichier);
 }
 
-// 2.1 Niveaux de gris
+/// Manipulation d’une image en memoire
 
 float luminance(tPixel p)
 {
@@ -238,4 +250,175 @@ tImage flou(tImage im, int r)
     }
 
     return image;
+}
+
+tImage contours(tImage im)
+{
+    tImage image = copieImage(im);
+
+    for (int i = 0; i < im.hauteur; i++)
+    {
+        for (int j = 0; j < im.largeur; j++)
+        {
+            tPixel p = floumoy(im, i, j, 2);
+            image.img[i][j].r = 255 - abs(image.img[i][j].r - p.r);
+            image.img[i][j].v = 255 - abs(image.img[i][j].v - p.v);
+            image.img[i][j].b = 255 - abs(image.img[i][j].b - p.b);
+        }
+    }
+
+    return image;
+}
+
+/// 1.3 Steganographie
+
+unsigned char fusionOctets(unsigned char octet1, unsigned char octet2)
+{
+    return (octet1 & 0xf0) | (octet2 >> 4);// 0xf0 = 11110000
+    // met à 0 les bits de poids faible de l'octet et garde le poid fort avec l'opérateur &: 11111010 & 11110000 = 11110000
+    // octet2 >> 4 shift :  'pousse' les 4 bits de poids fort vers la droite (il deviennent poid faible) ex: 11110000 devient 00001111
+    // octet1 | x : fusion des octet par la l'opération OR (1|Ø=1, 1|1=1, seul 0|Ø=0)ex:
+    // 11110100
+    //|00000111     //https://en.wikipedia.org/wiki/Bitwise_operations_in_C
+    // 11110111
+}
+
+tImage cacheImage(tImage originale, tImage adissimuler)
+{
+    tImage image = copieImage(originale);
+
+    if(adissimuler.largeur > image.hauteur || adissimuler.hauteur > image.hauteur)
+    {
+        printf("L'image à dissimuler doit avoir des dimmensions égales ou plus petites que la cible.");
+        return image;
+    }
+
+    for (int i = 0; i < adissimuler.hauteur; i++)
+    {
+        for (int j = 0; j < adissimuler.largeur; j++)
+        {
+            image.img[i][j].r = fusionOctets(image.img[i][j].r, adissimuler.img[i][j].r);
+            image.img[i][j].v = fusionOctets(image.img[i][j].v, adissimuler.img[i][j].v);
+            image.img[i][j].b = fusionOctets(image.img[i][j].b, adissimuler.img[i][j].b);
+        }
+    }
+
+    return image;
+}
+
+tImage reveleImage(tImage im)
+{
+    tImage image = initImage(im.hauteur, im.largeur, im.type, im.maxval);
+    for (int i = 0; i < im.hauteur; i++)
+    {
+        for (int j = 0; j < im.largeur; j++)
+        {
+            image.img[i][j].r = im.img[i][j].r << 4;
+            image.img[i][j].v = im.img[i][j].v << 4;
+            image.img[i][j].b = im.img[i][j].b << 4;
+        }
+    }
+
+    return image;
+}
+
+tPixel cacheCarac(tPixel pix, char c)
+{
+    tPixel p = pix;
+    //0xf0 = 11110000. XXXXXXX & 0xf0= XXXX0000
+    p.r = (p.r & 0xf0) | (c >> 4); //  XXXXABCD >> 4 = 0000XXXX
+    p.v = (p.r & 0xf0) | (c & 0xf);
+    // 0xf = 00001111. XXXXXXX & 0xf = 0000XXXX
+    return p;
+}
+
+char extraitCaract(tPixel pix)
+{
+    return (pix.r << 4) | (pix.v & 0xf);
+    //      pixr0000   '+'   0000pixv
+}
+
+tImage cacheTexte(tImage im, char* lefichier)
+{
+    FILE* f;
+    tImage image = copieImage(im);
+    int tailleDisponible = image.largeur * image.hauteur - 2;
+    char* str;
+    
+    // Ouverture du fichier texte en lecture
+    // En cas d'erreur de lecture du fichier on affiche un message d'erreur
+    // et on retourne une copie de l'image
+    if ((f = fopen(lefichier, "r")) == NULL){
+        fprintf(stderr, "\nErreur dans cacheTexte : %s innaccessible", lefichier);
+        return image;
+    };
+
+    fseek(f, 0, SEEK_END);
+    int fTaille = ftell(f) + 1;
+
+    if(fTaille > tailleDisponible)
+    {
+        fprintf(stderr, "\nErreur dans cacheTexte : %s est trop volumineux pour cette image", lefichier);
+        fclose(f);
+        return image;
+    }
+
+    fseek(f, 0, SEEK_SET);//=rewind
+
+    str = malloc(fTaille);
+
+    if(!fread(str, 1, fTaille, f))
+    {
+        fprintf(stderr, "\nErreur dans cacheTexte : erreur lors de la lecture du fichier");
+        fclose(f);
+        free(str);
+        return image;
+    }
+
+    int pos = 0;
+    for (int y = 0; y < fTaille / image.largeur && pos <= fTaille; y++)
+    {
+        for (int x = 0; x < image.largeur; x++)
+        {
+            if(pos == fTaille)
+            { 
+                image.img[y][x] = cacheCarac(im.img[y][x], (char)0);
+                break; 
+            }
+
+            image.img[y][x] = cacheCarac(im.img[y][x], str[pos]);
+            pos++;
+        }
+    }
+
+    fclose(f);
+    free(str);
+    return image;
+}
+
+void reveleTexte(tImage im, char* fichExtrait)
+{
+    FILE* f;
+
+    if (!(f = fopen(fichExtrait, "w"))){
+        fprintf(stderr, "\nErreur dans cacheTexte : %s innaccessible", fichExtrait);
+        return;
+    };
+
+    int pos = 0;
+    for (int y = 0; y < im.hauteur; y++)
+    {
+        for (int x = 0; x < im.largeur; x++)
+        {
+            char c = extraitCaract(im.img[y][x]);
+            fputc(c, f);
+
+            if(c == 0) 
+            {
+                fclose(f);
+                return;
+            }
+        }
+    }
+
 }

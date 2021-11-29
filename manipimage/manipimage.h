@@ -47,9 +47,11 @@ tImage initImage(int haut, int larg, char typ[3], int vmax);
 
 tImage copieImage(tImage im);
 
-tImage chargePpm(char* fichier);
+tImage chargePnm(char* fichier);
 
-void sauvePpm(char* nom, tImage im);
+void sauvePnm(char* nom, tImage im);
+
+/// 1.2
 
 float luminance(tPixel p);
 
@@ -58,3 +60,21 @@ tImage niveauGris(tImage im);
 tPixel floumoy(tImage im, int i, int j, int r);
 
 tImage flou(tImage im, int r);
+
+tImage contours(tImage im);
+
+/// 1.3
+
+unsigned char fusionOctets(unsigned char octet1, unsigned char octet2);
+
+tImage cacheImage(tImage originale, tImage adissimuler);
+
+tImage reveleImage(tImage im);
+
+tPixel cacheCarac(tPixel pix, char c);
+
+char extraitCaract(tPixel pix);
+
+tImage cacheTexte(tImage im, char* lefichier);
+
+void reveleTexte(tImage im, char* fichExtrait);
