@@ -91,28 +91,29 @@ tImage chargePpm(char* fichier)
     tImage image = initImage(hauteur, largeur, str, vmax);
 
     //  Lecture pixel par pixel des valeurs RVB:
-    for (int i = 0; i < largeur * hauteur; i++)
+    for (int y = 0; y < hauteur; y++)
     {
-        unsigned char r = 0, v = 0, b = 0;
-        if (fscanf(pFile, "%hhu", &r)//       lecture du rouge (%hhu -> unsigned char (0 à 255) enregisté sur 3 caractères)
-            && fscanf(pFile, "%hhu", &v)//    lecture du vert
-            && fscanf(pFile, "%hhu", &b))//   lecture du bleu
+        for (int x = 0; x < largeur; x++)
         {
-            //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
-            int y = i % hauteur;
-            int x = i / hauteur;
-            //  Affectation des valeurs avec les indexes correspondant à la position.
-            image.img[y][x].r = r;
+            unsigned char r = 0, v = 0, b = 0;
+            if (fscanf(pFile, "%hhu", &r)     //       lecture du rouge (%hhu -> unsigned char (0 à 255) enregisté sur 3 caractères)
+                && fscanf(pFile, "%hhu", &v)  //    lecture du vert
+                && fscanf(pFile, "%hhu", &b)) //   lecture du bleu
+            {
+                //  Affectation des valeurs avec les indexes correspondant à la position.
+                image.img[y][x].r = r;
 
-            if(image.type[1] <= '2') continue;
+                if (image.type[1] <= '2')
+                    continue;
 
-            image.img[y][x].v = v;
-            image.img[y][x].b = b;
-        }
-        else
-        {   //  Si il y a une erreur sur un des pixel lance une erreur et arrete la lecture du fichier.
-            perror("Lecture des pixels: Fichier invalide ou corrompu ou mauvais nombre de valeurs.");
-            break;
+                image.img[y][x].v = v;
+                image.img[y][x].b = b;
+            }
+            else
+            { //  Si il y a une erreur sur un des pixel lance une erreur et arrete la lecture du fichier.
+                perror("Lecture des pixels: Fichier invalide ou corrompu ou mauvais nombre de valeurs.");
+                break;
+            }
         }
     }
 
@@ -145,18 +146,19 @@ void sauvePpm(char* nom, tImage im)
     fprintf(fichier, "%d\n", im.maxval);
 
     //  Ecriture des 3 couleurs pixel par pixel dans le fichier
-    for (int i = 0; i < im.largeur * im.hauteur; i++)
+    for (int y = 0; y < im.hauteur; y++)
     {
-        //  Calcul de la position (x, y) du pixel dans l'image par rapport à l'avancement dans la boucle.
-        int y = i % im.hauteur;
-        int x = i / im.hauteur;
-        //  Affectation des valeurs avec les indexes correspondant à la position.
-        fprintf(fichier, "%hhu\n", im.img[y][x].r);
+        for (int x = 0; x < im.largeur; x++)
+        {
+            //  Affectation des valeurs avec les indexes correspondant à la position.
+            fprintf(fichier, "%hhu\n", im.img[y][x].r);
 
-        if(im.type[1] <= '2') continue;// Seulement une valeur par pixel pour P2 et P1
+            if (im.type[1] <= '2')
+                continue; // Seulement une valeur par pixel pour P2 et P1
 
-        fprintf(fichier, "%hhu\n", im.img[y][x].v);
-        fprintf(fichier, "%hhu\n", im.img[y][x].b);
+            fprintf(fichier, "%hhu\n", im.img[y][x].v);
+            fprintf(fichier, "%hhu\n", im.img[y][x].b);
+        }
     }
 
     fclose(fichier);
@@ -197,14 +199,6 @@ tPixel floumoy(tImage im, int i, int j, int r)
     int R = 0, V = 0, B = 0;
     int n = 0;
 
-    // if(i > 256)
-    // {
-    // printf("x { j - r: %d, j + r: %d, MAX(j - r, 0): %d, MIN(j + r, im.largeur): %d, }\n", j - r, j + r, MAX(j - r, 0), MIN(r + j, im.largeur));
-    // printf("y { i - r: %d, i + r: %d, MAX(i - r, 0): %d, MIN(i + r, im.largeur): %d, }\n", i - r, i + r, MAX(i - r, 0), MIN(r + i, im.largeur));
-    // }
-    //printf("y: %d %d", MAX(i - r, 0), MIN(r + i, im.hauteur));
-
-    //MIN et MAX defini dans manipimage.h
     for(int y = MAX(i - r, 0); y < MIN(i + r, im.hauteur); y++)
     {
         for(int x = MAX(j - r, 0); x < MIN(j + r, im.largeur); x++)
@@ -239,7 +233,7 @@ tImage flou(tImage im, int r)
     {
         for (int j = 0; j < im.largeur; j++)
         {
-            image.img[i][j] = floumoy(im, i, j, r); 
+            image.img[i][j] = floumoy(im, i, j, r);
         }
     }
 

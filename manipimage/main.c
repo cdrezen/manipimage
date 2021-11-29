@@ -86,7 +86,7 @@ int main()
     }
     */
     tImage im = chargePpm("image1.ppm");
-    tImage imFlou = flou(im, 7);
+    tImage imFlou = flou(im, 10);
     sauvePpm("imFlou.ppm", imFlou);
     return 0;
 }
