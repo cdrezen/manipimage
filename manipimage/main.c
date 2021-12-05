@@ -87,13 +87,20 @@ int main()
     */
 
     tImage im = chargePnm("image1.ppm");
+
     tImage imPGM = niveauGris(im);
     tImage imFlou = flou(im, 3);
     tImage imGauss = contours(im);
+    free(im.img);
 
     sauvePnm("image1Gris.pgm", imPGM);
+    free(imPGM.img);
+
     sauvePnm("image1Flou.ppm", imFlou);
+    free(imFlou.img);
+
     sauvePnm("image1Contours.ppm", imGauss);
+    free(imGauss.img);
 
     return 0;
 }
