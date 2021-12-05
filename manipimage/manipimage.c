@@ -178,9 +178,10 @@ void sauvePnm(char* nom, tImage im)
 
 /// 1.2 Manipulation d’une image en memoire
 
-float luminance(tPixel p)// calcule la valeur de niveau de gris
-{   //Gris = 0.2125 Rouge + 0.7154 Vert + 0.0721 Bleu       xf = float
-    return (0.2125f * p.r) + (0.7154f * p.v) + (0.0721f * p.b);
+// calcule la valeur de niveau de gris
+float luminance(tPixel p)
+{
+    return (0.2125f * p.r) + (0.7154f * p.v) + (0.0721f * p.b);// Gris = 0.2125 Rouge + 0.7154 Vert + 0.0721 Bleu       xf = float
 }
 
 tImage niveauGris(tImage im)

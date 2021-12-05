@@ -1,5 +1,5 @@
 //40007337  Drezen Corentin
-//40003483  Pallard Beno�t
+//40003483  Pallard Benoît
 
 //Fonction min et max
 #define MIN(a,b) (((a)<(b))?(a):(b))//si a<b retourne a sinon retourne b
@@ -8,14 +8,6 @@
 // ************************************************
 // Definition des types
 // ************************************************
-
-// Un enum qui servira a identifier les couleur selon la ligne
-enum
-{
-    ROUGE,
-    VERT,
-    BLEU
-};
 
 // Le type tPixel
 typedef struct pixel {
