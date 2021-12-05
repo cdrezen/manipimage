@@ -86,7 +86,14 @@ int main()
     }
     */
 
-    tImage im = chargePnm("textecache.ppm");
-    reveleTexte(im, "dump.txt");
+    tImage im = chargePnm("image1.ppm");
+    tImage imPGM = niveauGris(im);
+    tImage imFlou = flou(im, 3);
+    tImage imGauss = contours(im);
+
+    sauvePnm("image1Gris.pgm", imPGM);
+    sauvePnm("image1Flou.ppm", imFlou);
+    sauvePnm("image1Contours.ppm", imGauss);
+
     return 0;
 }

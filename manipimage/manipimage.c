@@ -176,17 +176,17 @@ void sauvePnm(char* nom, tImage im)
     fclose(fichier);
 }
 
-/// Manipulation d’une image en memoire
+/// 1.2 Manipulation d’une image en memoire
 
-float luminance(tPixel p)
-{
+float luminance(tPixel p)// calcule la valeur de niveau de gris
+{   //Gris = 0.2125 Rouge + 0.7154 Vert + 0.0721 Bleu       xf = float
     return (0.2125f * p.r) + (0.7154f * p.v) + (0.0721f * p.b);
 }
 
 tImage niveauGris(tImage im)
 {
     // Faire une copie et remplacer le type par P2 (niveau de gris) qui ne prend qu'une valeur par pixel cf https://fr.wikipedia.org/wiki/Portable_pixmap#PGM
-    // sauvepPpm et chargePpm modifiés pour gérer les P2
+    // sauvepPnm et chargePnm modifiés pour gérer les P2
     tImage image = initImage(im.hauteur, im.largeur, "P2", im.maxval);
 
     //  Copie des valeurs des pixels luminant dans la nouvelle image
@@ -195,9 +195,10 @@ tImage niveauGris(tImage im)
         for (int j = 0; j < im.largeur; j++)
         {
             // Change la valeur en niveau de gris
-            unsigned char lum = (unsigned char)luminance(im.img[i][j]);
+
+            unsigned char lum = (unsigned char)luminance(im.img[i][j]);// calcule la valeur de niveau de gris
             image.img[i][j].r = lum;
-            // inutile pour les autres valeurs mais permeterai aussi de l'enregistrer en P3 facilement
+            // inutile pour les autres valeurs mais permeterai aussi de l'enregistrer en P3 facilement :
             image.img[i][j].v = lum;//
             image.img[i][j].b = lum;//
         }
@@ -211,25 +212,27 @@ tPixel floumoy(tImage im, int i, int j, int r)
     int R = 0, V = 0, B = 0;
     int n = 0;
 
-    for(int y = MAX(i - r, 0); y < MIN(i + r, im.hauteur); y++)
-    {
+    // itère dans toute le carré de côté 2r+1(ou moins si i ou j < 0 ou > largeur ou hauteur) et fait les sommes pour chaque couleurs 
+    for(int y = MAX(i - r, 0); y < MIN(i + r, im.hauteur); y++) // la définition de MIN et MAX est dans le .h, équivalente à celle de python ou de c++      
+    {                                                           // MIN et MAX sont là pour empecher d'utiliser des indexes hors des bords de l'image
         for(int x = MAX(j - r, 0); x < MIN(j + r, im.largeur); x++)
         {
+            // incrémente les sommes des couleurs
             R += im.img[y][x].r;
             V += im.img[y][x].v;
             B += im.img[y][x].b;
-            n++;
+            n++; // incrémente de diviseur
         }
     }
 
-    if(n > 0) 
+    if(n > 0) // divise chaque somme de couleurs par le nombre de pixels -> moyenne
     { 
         R /= n; 
         V /= n; 
         B /= n; 
     }
 
-    return (tPixel)
+    return (tPixel)//renvoie un pixel avec comme couleurs les moyennes des couleurs du carré 
     { 
         (unsigned char)R, 
         (unsigned char)V, 
@@ -239,12 +242,14 @@ tPixel floumoy(tImage im, int i, int j, int r)
 
 tImage flou(tImage im, int r)
 {
-    tImage image = copieImage(im);
+    // on fait une copie de l'image car on va se servir de l'autre comme référence et celle-ci va être modifiée
+    tImage image = copieImage(im); 
 
     for (int i = 0; i < im.hauteur; i++)
     {
         for (int j = 0; j < im.largeur; j++)
         {
+            // chaque pixel est remplacé par la moyenne des pixels dans un carré de rayon r
             image.img[i][j] = floumoy(im, i, j, r);
         }
     }
@@ -254,16 +259,19 @@ tImage flou(tImage im, int r)
 
 tImage contours(tImage im)
 {
+    // on fait une copie de l'image car on va s'en servir et on ne veut pas modifié celle qui est donné en argument
     tImage image = copieImage(im);
 
     for (int i = 0; i < im.hauteur; i++)
     {
         for (int j = 0; j < im.largeur; j++)
-        {
-            tPixel p = floumoy(im, i, j, 2);
-            image.img[i][j].r = 255 - abs(image.img[i][j].r - p.r);
-            image.img[i][j].v = 255 - abs(image.img[i][j].v - p.v);
-            image.img[i][j].b = 255 - abs(image.img[i][j].b - p.b);
+        {   
+            // On remplace chaque couleur du pixel par sa valeur de flou gaussien
+
+            tPixel p = floumoy(im, i, j, 2); // Obtient le pixel flouté Fij de rayon 2  
+            image.img[i][j].r = 255 - abs(image.img[i][j].r - p.r);// Pij.r = blanc - | Pij.r - Fij.r |     blanc = 255
+            image.img[i][j].v = 255 - abs(image.img[i][j].v - p.v);// Pij.v = blanc - | Pij.v - Fij.v |
+            image.img[i][j].b = 255 - abs(image.img[i][j].b - p.b);// Pij.b = blanc - | Pij.b - Fij.b |
         }
     }
 
@@ -366,6 +374,12 @@ tImage cacheTexte(tImage im, char* lefichier)
     fseek(f, 0, SEEK_SET);//=rewind
 
     str = malloc(fTaille);
+
+    if (!str) 
+    { 
+        fprintf(stderr, "\nErreur dans cacheTexte : erreur de malloc");
+        return image; 
+    }
 
     if(!fread(str, 1, fTaille, f))
     {

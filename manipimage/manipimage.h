@@ -2,7 +2,7 @@
 //40003483  Pallard Beno�t
 
 //Fonction min et max
-#define MIN(a,b) (((a)<(b))?(a):(b))
+#define MIN(a,b) (((a)<(b))?(a):(b))//si a<b retourne a sinon retourne b
 #define MAX(a,b) (((a)>(b))?(a):(b))
 
 // ************************************************
