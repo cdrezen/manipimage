@@ -144,6 +144,7 @@
     <ClCompile Include="manipimage1.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="consoleunix.h" />
     <ClInclude Include="manipimage.h" />
   </ItemGroup>
   <ItemGroup>

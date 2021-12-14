@@ -3,8 +3,84 @@
 
 #pragma
 #include <stdio.h>
+#include <string.h>
 #include "manipimage.h"
-#include "string.h"
+
+#ifdef _WIN32
+    #include <conio.h>
+#else
+    #include "consoleunix.h"
+#endif
+
+#define FLECHE_HAUT 72
+#define FLECHE_GAUCHE 75
+#define FLECHE_DROITE 77
+#define FLECHE_BAS 80
+#define TOUCHE_ENTRER '\r'  
+#define ASCII_0 48
+
+int menu(char** choix, int nbChoix, int origineConsole) 
+{
+    for (int i = 0; i < nbChoix - 1; i++)
+    {
+        printf("%d. %s\n", i + 1, choix[i]);
+    }
+
+    //////////////////////https://www.csie.ntu.edu.tw/~r92094/c++/VT100.html
+
+    printf("0. \x1B[7m%s\n", choix[nbChoix - 1]);
+
+    printf("\x1B[0mChoix ==> %s", choix[nbChoix - 1]);
+
+
+    printf("\x1b[%d;0f", nbChoix + origineConsole);
+
+    char selectionPred = 8;
+    char selection = 8;
+    char c = 0;
+
+    while (c != TOUCHE_ENTRER)
+    {
+        if (c >= ASCII_0 && c <= ASCII_0 + 9) // Le controle du tableau par valeur numérique ne fonctionnera pas pour des valeurs de choix superieur à 9
+        {
+            selection = c - ASCII_0;
+            if (selection > nbChoix) { selection = selectionPred; }
+            if (selection == 0) { selection = nbChoix; }
+        }
+
+        switch (c)
+        {
+        case FLECHE_HAUT:
+        case FLECHE_GAUCHE:
+            if (selection != 1)
+            {
+                selection--;
+            }
+            break;
+        case FLECHE_BAS:
+        case FLECHE_DROITE:
+            if (selection < nbChoix)
+            {
+                selection++;
+            }
+            break;
+        default:
+            break;
+        }
+
+        if (selection != selectionPred)
+        {
+            printf("\x1b[%d;4f\x1B[0m%s", selectionPred + origineConsole, choix[selectionPred - 1]);
+            printf("\x1b[%d;4f\x1B[7m%s", selection + origineConsole, choix[selection - 1]);
+            printf("\x1b[%d;0f\x1B[0m\x1b[KChoix ==> %s", origineConsole + nbChoix + 1, choix[selection - 1]);
+            selectionPred = selection;
+        }
+
+        c = _getch();
+    }
+
+    return selection;
+}
 
 int main()
 {
@@ -86,6 +162,7 @@ int main()
     }
     */
 
+    /*
     tImage im = chargePnm("image1.ppm");
 
     tImage imPGM = niveauGris(im);
@@ -101,6 +178,25 @@ int main()
 
     sauvePnm("image1Contours.ppm", imGauss);
     free(imGauss.img);
+    */
 
+    printf("Quelle opération voulez-vous effectuer ?\n");
+
+    const char * MENU[8] =
+    {
+        "Transformer une image en niveau de gris",
+        "Flouter une image",
+        "Détourer une image",
+        "Dissimuler une image dans une autre",
+        "Révéler une image cachée dans une autre",
+        "Dissimuler du texte dans une image",
+        "Révéler un texte caché dans une image",
+        "Quitter"
+    };
+
+    int selection = menu(MENU, 8, 1);//1?
+
+    printf("%d", selection);
+    
     return 0;
 }

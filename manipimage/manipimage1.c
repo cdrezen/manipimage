@@ -6,6 +6,13 @@ l’image contenue dans le fichier donn ́ee en param`etre. Une partie du code e
 Apr`es avoir pass ́e les lignes de commentaire, chaque donn ́ee  ́etant s ́epar ́ee de la suivante par un espace ou
 un passage `a la ligne vous pouvez utiliser la fonction fscanf pour les r ́ecup ́erer. */
 
+enum
+{
+    ROUGE,
+    VERT,
+    BLEU
+};
+
 tImage chargePpm1(char* fichier)
 {
     int largeur = 0, hauteur = 0, maxval = 0;

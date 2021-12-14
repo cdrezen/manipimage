@@ -29,6 +29,9 @@
     <ClInclude Include="manipimage.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="consoleunix.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="image1.ppm" />
