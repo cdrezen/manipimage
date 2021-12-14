@@ -8,19 +8,42 @@
 
 #ifdef _WIN32
     #include <conio.h>
+    #define FLECHE_HAUT 72
+    #define FLECHE_GAUCHE 75
+    #define FLECHE_DROITE 77
+    #define FLECHE_BAS 80
 #else
     #include "consoleunix.h"
+    #define FLECHE_HAUT 65
+    #define FLECHE_BAS 66
+    #define FLECHE_DROITE 67
+    #define FLECHE_GAUCHE 68
 #endif
 
-#define FLECHE_HAUT 72
-#define FLECHE_GAUCHE 75
-#define FLECHE_DROITE 77
-#define FLECHE_BAS 80
-#define TOUCHE_ENTRER '\r'  
+#define TOUCHE_ENTRER '\n'  
 #define ASCII_0 48
 
-int menu(char** choix, int nbChoix, int origineConsole) 
+int menu(char** choix, int nbChoix) 
 {
+    printf("\x1b[6n"); //requete coordonnées
+
+    int origineConsole = 0;
+    char str[8];
+
+    for(int i = 0; i < 8; i++)
+    {
+        str[i] = _getch();
+        if(str[i] == 'R') 
+        { 
+            str[i] = 0;
+            break;
+        }
+    }
+
+    sscanf(str, "\x1b[%d;*", &origineConsole);
+    origineConsole--;
+
+
     for (int i = 0; i < nbChoix - 1; i++)
     {
         printf("%d. %s\n", i + 1, choix[i]);
@@ -41,6 +64,13 @@ int menu(char** choix, int nbChoix, int origineConsole)
 
     while (c != TOUCHE_ENTRER)
     {
+
+        /* if (c != 0)
+        {
+            printf("%d\n", c);
+            continue;
+        } */
+
         if (c >= ASCII_0 && c <= ASCII_0 + 9) // Le controle du tableau par valeur numérique ne fonctionnera pas pour des valeurs de choix superieur à 9
         {
             selection = c - ASCII_0;
@@ -194,7 +224,7 @@ int main()
         "Quitter"
     };
 
-    int selection = menu(MENU, 8, 1);//1?
+    int selection = menu(MENU, 8);
 
     printf("%d", selection);
     
