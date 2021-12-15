@@ -25,11 +25,12 @@
 
 #define ASCII_0 48
 
-#ifndef _WIN32
+#ifndef _WIN32  // pour consoles de systemes Unix avec prise en charge des codes VT100 ( '\x1b...' https://www.csie.ntu.edu.tw/~r92094/c++/VT100.html) : xterm, Terminal, etc. 
+                // cmd.exe de Windows ne les prend en charges seulement à partir d'une version récente de Windows 10
 
 int menu(char** choix, int nbChoix)
 {
-    //////////////////////https://www.csie.ntu.edu.tw/~r92094/c++/VT100.html
+    
 
     printf("\x1b[6n"); //requete coordonnées
 
@@ -109,7 +110,7 @@ int menu(char** choix, int nbChoix)
     return selection;
 }
 
-#else
+#else   //Windows
 
 int menu(char** choix, int nbChoix)
 {
