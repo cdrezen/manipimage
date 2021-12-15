@@ -15,7 +15,8 @@
     #define FLECHE_BAS 80
     #define TOUCHE_ENTRER '\r'  
 #else
-    #include "consoleunix.h"
+    #include <termios.h>
+    #include <unistd.h>
     #define FLECHE_HAUT 65
     #define FLECHE_BAS 66
     #define FLECHE_DROITE 67
@@ -28,18 +29,22 @@
 #ifndef _WIN32  // pour consoles de systemes Unix avec prise en charge des codes VT100 ( '\x1b...' https://www.csie.ntu.edu.tw/~r92094/c++/VT100.html) : xterm, Terminal, etc. 
                 // cmd.exe de Windows ne les prend en charges seulement à partir d'une version récente de Windows 10
 
-int menu(char** choix, int nbChoix)
+int menu(const char** choix, int nbChoix)
 {
-    
+    struct termios attr;
+    tcgetattr(STDIN_FILENO, &attr); //récupère la structure terminos de stdin, l'entré utlisateur de la console
 
-    printf("\x1b[6n"); //requete coordonnées
+    attr.c_lflag &= ~(ICANON | ECHO); //enlève le mode canonique (mode entrées ligne par ligne) et l'affichage des entrées
+    tcsetattr(STDIN_FILENO, TCSANOW, &attr);
+
+    printf("\x1b[6n"); //requete coordonnées curseur actuelles
 
     int origineConsole = 0;
-    char str[8];
+    char str[16];
 
-    for (int i = 0; i < 8; i++)
+    for (int i = 0; i < 16; i++)//lecture de la réponse de la forme 'x1b[y;xR'
     {
-        str[i] = _getch();
+        str[i] = getchar();
         if (str[i] == 'R')
         {
             str[i] = 0;
@@ -47,47 +52,51 @@ int menu(char** choix, int nbChoix)
         }
     }
 
-    sscanf(str, "\x1b[%d;*", &origineConsole);
-    origineConsole--;
+    sscanf(str, "\x1b[%d;*", &origineConsole); // récupérer la valeur y
 
+    if(origineConsole > 20)
+    {
+        printf("\x1b[H\x1b[J");
+        origineConsole = 0;
+    }
 
     for (int i = 0; i < nbChoix - 1; i++)
     {
         printf("%d. %s\n", i + 1, choix[i]);
     }
 
-
+    //Le dernier élément est chosi comme selection d'origine
     printf("0. \x1B[7m%s\n", choix[nbChoix - 1]); //7m = inversion couleurs arière plan / premier plan
-
     printf("\x1B[0mChoix ==> %s", choix[nbChoix - 1]); //0m = rétablissement couleurs par défault
+    printf("\x1b[%d;0f", nbChoix + origineConsole - 1); // déplacement curseur au dernier élément du menu
 
-    printf("\x1b[%d;0f", nbChoix + origineConsole); // déplacement curseur au dernier élément du menu
-
-    char selectionPred = 8;
-    char selection = 8;
+    char selectionPred = nbChoix - 1;
+    char selection = nbChoix - 1;
     char c = 0;
 
     while (c != TOUCHE_ENTRER)
     {
+        c = getchar();
+
         if (c >= ASCII_0 && c <= ASCII_0 + 9) // Le controle du tableau par valeur numérique ne fonctionnera pas pour des valeurs de choix superieur à 9
         {
             selection = c - ASCII_0;
             if (selection > nbChoix) { selection = selectionPred; }
-            if (selection == 0) { selection = nbChoix; }
+            if (selection == 0) { selection = nbChoix -1; }
         }
 
         switch (c)
         {
         case FLECHE_HAUT:
         case FLECHE_GAUCHE:
-            if (selection != 1)
+            if (selection != 0)
             {
                 selection--;
             }
             break;
         case FLECHE_BAS:
         case FLECHE_DROITE:
-            if (selection < nbChoix)
+            if (selection < nbChoix - 1)
             {
                 selection++;
             }
@@ -98,21 +107,23 @@ int menu(char** choix, int nbChoix)
 
         if (selection != selectionPred)
         {
-            printf("\x1b[%d;4f\x1B[0m%s", selectionPred + origineConsole, choix[selectionPred - 1]);
-            printf("\x1b[%d;4f\x1B[7m%s", selection + origineConsole, choix[selection - 1]);
-            printf("\x1b[%d;0f\x1B[0m\x1b[KChoix ==> %s", origineConsole + nbChoix + 1, choix[selection - 1]); //K = effacer la ligne
+            printf("\x1b[%d;4f\x1B[0m%s", selectionPred + origineConsole, choix[selectionPred]);
+            printf("\x1b[%d;4f\x1B[7m%s", selection + origineConsole, choix[selection]);
+            printf("\x1b[%d;0f\x1B[0m\x1b[KChoix ==> %s", origineConsole + nbChoix, choix[selection]); //K = effacer la ligne
             selectionPred = selection;
         }
-
-        c = _getch();
     }
+
+    attr.c_lflag |= ICANON | ECHO; //rétabli le mode canonique et l'affichage des entrées
+    tcsetattr(STDIN_FILENO, TCSANOW, &attr);
+    fflush(stdin);
 
     return selection;
 }
 
 #else   //Windows
 
-int menu(char** choix, int nbChoix)
+int menu(const char** choix, int nbChoix)
 {
     HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
     int origineConsole = 0;
@@ -144,7 +155,7 @@ int menu(char** choix, int nbChoix)
     {
         while (!_kbhit()); //attend une touche
 
-        c = _getch();
+        c = _getch(); // équivalent à passer la console en non canonique et lire un char sans l'afficher sous linux
 
         if (c >= ASCII_0 && c <= ASCII_0 + 9) // Le controle du tableau par valeur numérique ne fonctionnera pas pour des valeurs de choix superieur à 9
         {
@@ -200,6 +211,32 @@ int menu(char** choix, int nbChoix)
 }
 
 #endif
+
+int demandeFichierImage(tImage* image)
+{
+    char reponse[256];
+
+    printf("Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n");
+
+    if (!scanf("%s", reponse))// Verifie si scanf n'a pas échoué.
+    {
+        printf("demandeFichierImage: erreur scanf\n");
+        return -1;
+    }
+
+    printf("Chargement du fichier...\n");
+
+    *image = chargePnm(reponse);
+
+    if(image->largeur == 0 || image->hauteur == 0)// Verifie si chargePpm n'a pas �chou�.
+    {
+        perror("\nVous devez choisir un fichier pnm de type P2 ou P3.");
+        return demandeFichierImage(image);
+    }
+
+    printf("Fichier importé.");
+    return 0;
+}
 
 int main()
 {
@@ -313,9 +350,49 @@ int main()
         "Quitter"
     };
 
+    enum
+    {
+        GRIS,
+        FLOUTE,
+        DETOUR,
+        DISSIMULE_IMG,
+        REVELE_IMG,
+        DISSIMULE_TXT,
+        REVELE_TXT,
+        QUITTER
+    };
+
     int selection = menu(MENU, 8);
 
-    printf("%d", selection);
+    printf("%d\n", selection);
+
+    if(selection == QUITTER){
+        return 0;
+    }
+
+    char cwd[256];
+   if (getcwd(cwd, sizeof(cwd)) != NULL) {
+       printf("Current working dir: %s\n", cwd);
+   }
+
+    tImage image;
+    demandeFichierImage(&image);
+
+    switch (selection)
+    {
+
+    case GRIS:
+        break;
+
+    case FLOUTE:
+        break;
+
+    case DETOUR:
+        break;
     
+    default:
+        break;
+    }
+
     return 0;
 }
