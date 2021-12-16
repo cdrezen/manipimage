@@ -55,7 +55,7 @@ int menu(const char **choix, int nbChoix, char* titre)
 
     sscanf(str, " \x1b[%d;", &origineConsole); // récupérer la valeur y
 
-    if (origineConsole > 10)
+    if (origineConsole > 12)
     {
         printf("\x1b[1;0f\x1b[J");
         origineConsole = 1;
@@ -126,7 +126,6 @@ int menu(const char **choix, int nbChoix, char* titre)
 
     attr.c_lflag |= ICANON | ECHO; //rétabli le mode canonique et l'affichage des entrées
     tcsetattr(STDIN_FILENO, TCSANOW, &attr);
-    fflush(stdin);
 
     printf("\n");
 
@@ -146,6 +145,11 @@ int menu(const char **choix, int nbChoix, char* titre)
 
     origineConsole = csbi.dwCursorPosition.Y;
 
+    if (origineConsole > 16)
+    {
+
+    }
+
     printf("%s\n", titre);
 
     for (int i = 0; i < nbChoix - 1; i++)
@@ -155,14 +159,14 @@ int menu(const char **choix, int nbChoix, char* titre)
 
     printf("0. ");
     SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes | COMMON_LVB_REVERSE_VIDEO); //inversion couleurs arière plan / premier plan
-    printf("%s\n", choix[nbChoix - 1]);
+    printf("%s", choix[nbChoix - 1]);
     SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes);
-    printf("Choix ==> %s", choix[nbChoix - 1]);
+    printf("\nChoix ==> %s", choix[nbChoix - 1]);
 
     SetConsoleCursorPosition(hConsoleOutput, (COORD){0, nbChoix + origineConsole});
 
-    char selectionPred = 8;
-    char selection = 8;
+    char selectionPred = nbChoix - 1;
+    char selection = nbChoix - 1;
     char c = 0;
 
     while (c != TOUCHE_ENTRER)
@@ -189,14 +193,14 @@ int menu(const char **choix, int nbChoix, char* titre)
         {
         case FLECHE_HAUT:
         case FLECHE_GAUCHE:
-            if (selection != 1)
+            if (selection != 0)
             {
                 selection--;
             }
             break;
         case FLECHE_BAS:
         case FLECHE_DROITE:
-            if (selection < nbChoix)
+            if (selection < nbChoix - 1)
             {
                 selection++;
             }
@@ -207,28 +211,34 @@ int menu(const char **choix, int nbChoix, char* titre)
 
         if (selection != selectionPred)
         {
-            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selection + origineConsole});
+            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selection + origineConsole + 1});
             SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes | COMMON_LVB_REVERSE_VIDEO); //inversion couleurs arière plan / premier plan
-            printf("%s", choix[selection - 1]);
+            printf("%s", choix[selection]);
 
-            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selectionPred + origineConsole});
+            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selectionPred + origineConsole + 1});
             SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes);
-            printf("%s", choix[selectionPred - 1]);
+            printf("%s", choix[selectionPred]);
 
             SetConsoleCursorPosition(hConsoleOutput, (COORD){0, origineConsole + nbChoix + 1});
-            printf("Choix ==> %s", choix[selection - 1]);
+            printf("Choix ==> %s", choix[selection]);
 
-            int predDiff = strlen(choix[selectionPred - 1]) - strlen(choix[selection - 1]);
+            int predDiff = strlen(choix[selectionPred]) - strlen(choix[selection]);
 
             if (predDiff)
             { // si le texte de l'ancienne selection est plus grande il faut effacer les caractères 'qui dépassent'
                 int n = 0;
-                FillConsoleOutputCharacterA(hConsoleOutput, ' ', predDiff, (COORD){10 + strlen(choix[selection - 1]), origineConsole + nbChoix + 1}, &n);
+                FillConsoleOutputCharacterA(hConsoleOutput, ' ', predDiff, (COORD){10 + strlen(choix[selection]), origineConsole + nbChoix + 1}, &n);
+                FillConsoleOutputAttribute(
+                    hConsoleOutput, csbi.wAttributes,
+                    predDiff, (COORD) { 10 + strlen(choix[selection]), origineConsole + nbChoix + 1 }, &n
+                );
             }
 
             selectionPred = selection;
         }
     }
+
+    printf("\n");
 
     return selection;
 }
@@ -239,10 +249,12 @@ int demandeChemin(char *question, char *chemin)
 {
     printf("%s", question);
 
-    if (!scanf("%s", chemin)) // Verifie si scanf n'a pas échoué.
+    if(!fgets(chemin, 256, stdin))
     {
         return -1;
     }
+
+    chemin[strcspn(chemin, "\n")] = 0;
 
     return 0;
 }
@@ -301,19 +313,18 @@ int main()
 
     int selection = -1;
 
-    tImage source = ImageVide;
-    tImage source1 = ImageVide;
-    tImage document = ImageVide;
-    char cheminSauvegarde[256];
-    char cheminTexte[256];
+    
+    tImage source; source.largeur = 0;
+    tImage source1; source1.largeur = 0;
+    tImage document; document.largeur = 0;
+    char str[256];
     int rFlou = 0;
+
 
 
     while (selection != QUITTER)
     {
         selection = menu(MENU, 10, "Quelle opération voulez-vous effectuer ?");
-
-        printf("%d\n", selection); ///
 
         if(selection < IMPORT && source.largeur == 0)
         { 
@@ -330,10 +341,11 @@ int main()
 
         case FLOUTE:
             rFlou = 0;
-            while (rFlou < 1 || rFlou > 20) // Verifie si scanf n'a pas échoué.
+            while (rFlou < 1 || rFlou > 20)
             {
-                printf("Choisissez un rayon (entre 1 et 20 px):\n");
-                while (!scanf(" %d", &rFlou));
+                printf("Choisissez un rayon (entre 1 et 20 px):\n");                
+                if (!fgets(str, 256, stdin) || !sscanf(str, "%d", &rFlou)) 
+                { rFlou = 0; }
             }
             printf("Floutage de l'image (r=%dpx)...\n", rFlou);
             document = flou(source, rFlou);
@@ -357,13 +369,13 @@ int main()
             break;
 
         case DISSIMULE_TXT:
-            demandeChemin("Entrez un nom de fichier texte:\n", cheminTexte);
-            document = cacheTexte(source, cheminTexte);
+            demandeChemin("Entrez un nom de fichier texte:\n", str);
+            document = cacheTexte(source, str);
             break;
 
         case REVELE_TXT:
-            demandeChemin("Entrez un nom de fichier texte de sortie:\n", cheminTexte);
-            reveleTexte(source, cheminTexte);
+            demandeChemin("Entrez un nom de fichier texte de sortie:\n", str);
+            reveleTexte(source, str);
             break;
         
         case IMPORT:
@@ -380,11 +392,9 @@ int main()
                 printf("Pas d'image modifiée à sauvegarder.\n");
                 break;
             }
-
-            if(!menu(MENU_YN, 2, "Souhaiter-vous vraiment sauvegarder ?")){
-                demandeChemin("Choissisez un nom de fichier pour sauvegarder votre image:\n", cheminSauvegarde);
-                sauvePnm(cheminSauvegarde, document);
-            }
+  
+            demandeChemin("Choissisez un nom de fichier pour sauvegarder votre image:\n", str);
+            sauvePnm(str, document);
 
             break;
 
@@ -396,20 +406,20 @@ int main()
         {
             printf("Opération effectuée. Appuyez sur Entrée pour faire d'autres opérations\n");
 
-            if(selection != SAUV){
+            if(selection < IMPORT){
                 printf("ou entrez un nom de fichier pour sauvegarder votre image et quitter:\n");
             }
 
-            fgets(cheminSauvegarde, 256, stdin);
+            demandeChemin("", str);
 
-            if(cheminSauvegarde[0] == '\n' && source.largeur != 0)
+            if(str[0] == 0 && document.largeur != 0)
             {
                 free(source.img);
-                source = document;
+                source = copieImage(document);
             }
-            else if(selection != SAUV)
+            else if(selection < IMPORT && strlen(str) > 3 && !menu(MENU_YN, 2, "Souhaiter-vous vraiment sauvegarder et quitter ?"))
             {
-                sauvePnm(cheminSauvegarde, document);
+                sauvePnm(str, document);
                 selection = QUITTER;
             }
         }

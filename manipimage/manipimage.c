@@ -296,7 +296,7 @@ tImage cacheImage(tImage originale, tImage adissimuler)
 {
     tImage image = copieImage(originale);
 
-    if(adissimuler.largeur > image.hauteur || adissimuler.hauteur > image.hauteur)
+    if(adissimuler.largeur > image.largeur || adissimuler.hauteur > image.hauteur)
     {
         printf("L'image à dissimuler doit avoir des dimmensions égales ou plus petites que la cible.");
         return image;
