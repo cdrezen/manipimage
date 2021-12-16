@@ -30,8 +30,6 @@
 
 int menu(char** choix, int nbChoix)
 {
-    
-
     printf("\x1b[6n"); //requete coordonnées
 
     int origineConsole = 0;
@@ -192,6 +190,7 @@ int menu(char** choix, int nbChoix)
                 int n = 0;
                 FillConsoleOutputCharacterA(hConsoleOutput, ' ', predDiff, (COORD) { 10 + strlen(choix[selection - 1]), origineConsole + nbChoix + 1 }, &n);
             }
+
             selectionPred = selection;
         }
     }
