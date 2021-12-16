@@ -18,6 +18,7 @@
 #else
 #include <termios.h>
 #include <unistd.h>
+#include <sys/ioctl.h>
 #define FLECHE_HAUT 65
 #define FLECHE_BAS 66
 #define FLECHE_DROITE 67
@@ -55,14 +56,16 @@ int menu(const char **choix, int nbChoix, char* titre)
 
     sscanf(str, " \x1b[%d;", &origineConsole); // récupérer la valeur y
 
-    if (origineConsole > 12)
-    {
-        printf("\x1b[1;0f\x1b[J");
-        origineConsole = 1;
-    }
-
     printf("%s\n", titre);
     origineConsole++;
+
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+    if(origineConsole + nbChoix > w.ws_row)//corige l'origine si ça dépasse la hauteur de la console
+    {
+        origineConsole = w.ws_row - nbChoix;
+    }
 
     for (int i = 0; i < nbChoix - 1; i++)
     {
@@ -117,9 +120,9 @@ int menu(const char **choix, int nbChoix, char* titre)
 
         if (selection != selectionPred)
         {
-            printf("\x1b[%d;4f\x1B[0m%s", selectionPred + origineConsole, choix[selectionPred]);
             printf("\x1b[%d;4f\x1B[7m%s", selection + origineConsole, choix[selection]);
-            printf("\x1b[%d;0f\x1B[0m\x1b[KChoix ==> %s", origineConsole + nbChoix, choix[selection]); //K = effacer la ligne
+            printf("\x1b[%d;4f\x1B[0m%s", selectionPred + origineConsole, choix[selectionPred]);
+            printf("\x1b[%d;0f\x1b[KChoix ==> %s", origineConsole + nbChoix, choix[selection]); //K = effacer la ligne
             selectionPred = selection;
         }
     }
@@ -376,6 +379,7 @@ int main()
         case REVELE_TXT:
             demandeChemin("Entrez un nom de fichier texte de sortie:\n", str);
             reveleTexte(source, str);
+            printf("Opération effectuée.\n");
             break;
         
         case IMPORT:
@@ -392,19 +396,28 @@ int main()
                 printf("Pas d'image modifiée à sauvegarder.\n");
                 break;
             }
-  
-            demandeChemin("Choissisez un nom de fichier pour sauvegarder votre image:\n", str);
-            sauvePnm(str, document);
+
+            if(demandeChemin("Choissisez un nom de fichier pour sauvegarder votre image:\n", str) == 0 && str[0] != 0 && strlen(str) > 3)
+            {
+                sauvePnm(str, document);
+                printf("Fichier %s enregistré.\n", str);
+            }
+            else { printf("nom invalide.\n"); }
 
             break;
 
         default:
             break;
-        }      
+        }
+
+        if(selection < REVELE_TXT && document.largeur > 0)
+        { 
+            printf("Opération effectuée.\n"); 
+        }
 
         if(selection != QUITTER)
         {
-            printf("Opération effectuée. Appuyez sur Entrée pour faire d'autres opérations\n");
+            printf("Appuyez sur Entrée pour faire d'autres opérations\n");
 
             if(selection < IMPORT){
                 printf("ou entrez un nom de fichier pour sauvegarder votre image et quitter:\n");
@@ -420,6 +433,7 @@ int main()
             else if(selection < IMPORT && strlen(str) > 3 && !menu(MENU_YN, 2, "Souhaiter-vous vraiment sauvegarder et quitter ?"))
             {
                 sauvePnm(str, document);
+                printf("Fichier %s enregistré.\n", str);
                 selection = QUITTER;
             }
         }
