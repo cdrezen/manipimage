@@ -64,7 +64,7 @@ tImage chargePnm(char* fichier)
 
     if (!(pFile = fopen(fichier, "r")))
     {
-        fprintf(stderr, "\nErreur dans sauvePnm : %s innaccessible", fichier);
+        fprintf(stderr, "\nErreur dans chargePnm : %s innaccessible", fichier);
         return ImageVide;
     }
 
