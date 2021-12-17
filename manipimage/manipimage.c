@@ -214,9 +214,9 @@ tPixel floumoy(tImage im, int i, int j, int r)
     int n = 0;
 
     // itère dans toute le carré de côté 2r+1(ou moins si i ou j < 0 ou > largeur ou hauteur) et fait les sommes pour chaque couleurs 
-    for(int y = MAX(i - r, 0); y < MIN(i + r, im.hauteur); y++) // la définition de MIN et MAX est dans le .h, équivalente à celle de python ou de c++      
+    for(int y = MAX(i - r, 0); y <= MIN(i + r, im.hauteur - 1); y++) // la définition de MIN et MAX est dans le .h, équivalente à celle de python ou de c++      
     {                                                           // MIN et MAX sont là pour empecher d'utiliser des indexes hors des bords de l'image
-        for(int x = MAX(j - r, 0); x < MIN(j + r, im.largeur); x++)
+        for(int x = MAX(j - r, 0); x <= MIN(j + r, im.largeur - 1); x++)
         {
             // incrémente les sommes des couleurs
             R += im.img[y][x].r;
@@ -306,9 +306,9 @@ tImage cacheImage(tImage originale, tImage adissimuler)
     {
         for (int j = 0; j < adissimuler.largeur; j++)
         {
-            image.img[i][j].r = fusionOctets(image.img[i][j].r, adissimuler.img[i][j].r);
-            image.img[i][j].v = fusionOctets(image.img[i][j].v, adissimuler.img[i][j].v);
-            image.img[i][j].b = fusionOctets(image.img[i][j].b, adissimuler.img[i][j].b);
+            image.img[i][j].r = fusionOctets(image.img[i][j].r, adissimuler.img[i][j].r); // remplace les bits a de AAAAaaaa (originaux, poids faible)
+            image.img[i][j].v = fusionOctets(image.img[i][j].v, adissimuler.img[i][j].v); // par les bits B de BBBBbbbb (à dissimuler, poids fort)
+            image.img[i][j].b = fusionOctets(image.img[i][j].b, adissimuler.img[i][j].b); // pour chaque couleur : AAAABBBB 
         }
     }
 
@@ -321,10 +321,10 @@ tImage reveleImage(tImage im)
     for (int i = 0; i < im.hauteur; i++)
     {
         for (int j = 0; j < im.largeur; j++)
-        {
-            image.img[i][j].r = im.img[i][j].r << 4;
-            image.img[i][j].v = im.img[i][j].v << 4;
-            image.img[i][j].b = im.img[i][j].b << 4;
+        {                   // BBBBBBBB & 0xf = 0000BBBB. mets les bits de poids fort à 0
+            image.img[i][j].r = (im.img[i][j].r & 0xf) << 4; // c << 4 : pousse les bits de poids faible de 4 cran plus haut,
+            image.img[i][j].v = (im.img[i][j].v & 0xf) << 4; // vers la position des bits de poids fort
+            image.img[i][j].b = (im.img[i][j].b & 0xf) << 4; // 0000BBBB << 4  = BBBB0000
         }
     }
 
@@ -334,17 +334,17 @@ tImage reveleImage(tImage im)
 tPixel cacheCarac(tPixel pix, char c)
 {
     tPixel p = pix;
-    //0xf0 = 11110000. XXXXXXX & 0xf0= XXXX0000
-    p.r = (p.r & 0xf0) | (c >> 4); //  XXXXABCD >> 4 = 0000XXXX
-    p.v = (p.r & 0xf0) | (c & 0xf);
-    // 0xf = 00001111. XXXXXXX & 0xf = 0000XXXX
-    return p;
+    //0xf0 = 11110000. XXXXXXX & 0xf0= XXXX0000. 
+    p.r = (p.r & 0xf0) | (c >> 4);  //  RRRR0000 | 0000CHP1 = RRRRCHP1. (CHP1CHP2 >> 4 = 0000CHP1)
+    p.v = (p.r & 0xf0) | (c & 0xf); //  VVVV0000 | 0000CHP2 = VVVVCHP2. 0xf = 00001111. XXXXXXX & 0xf = 0000XXXX
+    return p; // p = { r = RRRRCHAR(poids fort), v = VVVVCHAR(poids faible), b = BBBBBBBB }
 }
 
 char extraitCaract(tPixel pix)
 {
-    return (pix.r << 4) | (pix.v & 0xf);
-    //      pixr0000   '+'   0000pixv
+    //           0000CHP1 << 4       0000CHP2
+    return ((pix.r & 0xf) << 4) | (pix.v & 0xf);
+    //              pixr0000   '+'   0000pixv
 }
 
 tImage cacheTexte(tImage im, char* lefichier)
@@ -362,8 +362,8 @@ tImage cacheTexte(tImage im, char* lefichier)
         return image;
     };
 
-    fseek(f, 0, SEEK_END);
-    int fTaille = ftell(f) + 1;
+    fseek(f, 0, SEEK_END);      //
+    int fTaille = ftell(f) + 1; //on obtient le nombre de char à lire, + 1 pour le terminateur
 
     if(fTaille > tailleDisponible)
     {
@@ -382,7 +382,7 @@ tImage cacheTexte(tImage im, char* lefichier)
         return image; 
     }
 
-    if(!fread(str, 1, fTaille, f))
+    if(!fread(str, 1, fTaille, f))// lit le texte et l'ecrit dans 'str'
     {
         fprintf(stderr, "\nErreur dans cacheTexte : erreur lors de la lecture du fichier");
         fclose(f);
@@ -390,18 +390,18 @@ tImage cacheTexte(tImage im, char* lefichier)
         return image;
     }
 
-    int pos = 0;
-    for (int y = 0; y < fTaille / image.largeur && pos <= fTaille; y++)
+    int pos = 0;    // On itère dans l'image en fonction de la taille du texte, on s'arrete quand on arrive au dernier char :
+    for (int y = 0; y < image.hauteur && pos <= fTaille; y++) // 2eme condition (pos <= fTaille) pour break le for de la hauteur
     {
         for (int x = 0; x < image.largeur; x++)
         {
-            if(pos == fTaille)
+            if(pos == fTaille)//dernier char
             { 
-                image.img[y][x] = cacheCarac(im.img[y][x], (char)0);
+                image.img[y][x] = cacheCarac(im.img[y][x], (char)0); //on ajoute un terminateur pour indiquer la fin du texte dans l'image
                 break; 
             }
 
-            image.img[y][x] = cacheCarac(im.img[y][x], str[pos]);
+            image.img[y][x] = cacheCarac(im.img[y][x], str[pos]); // pixel = { r = RRRRCHAR(poids fort), v = VVVVCHAR(poids faible), b = BBBBBBBB }
             pos++;
         }
     }
@@ -425,8 +425,8 @@ void reveleTexte(tImage im, char* fichExtrait)
     {
         for (int x = 0; x < im.largeur; x++)
         {
-            char c = extraitCaract(im.img[y][x]);
-            fputc(c, f);
+            char c = extraitCaract(im.img[y][x]); // c = pixR0000 | 0000pixV
+            fputc(c, f); // ecrit le caractère dans le fichier
 
             if(c == 0) 
             {

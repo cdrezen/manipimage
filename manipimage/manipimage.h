@@ -16,13 +16,6 @@ typedef struct pixel {
     unsigned char b;
 } tPixel;
 
-// Le type tPixelS pour impl�menter des valeurs de couleurs plus grandes plus tard
-typedef struct pixelS {
-    unsigned short r;
-    unsigned short v;
-    unsigned short b;
-} tPixelS;
-
 // Le type representant une image en memoire
 typedef struct image {
     int hauteur;        // Hauteur en pixels
@@ -30,7 +23,6 @@ typedef struct image {
     char type[3];       // Type de l'image pnm P1 P2 P3 P4 ou P6
     int maxval;         // Valeur maximale de l'intensite d'une couleur
     tPixel** img;       // Le tableau des pixels
-    //tPixelS** imgS;     // Le tableau des pixels ushort
 } tImage;
 
 static const struct image ImageVide = { 0, 0 };
