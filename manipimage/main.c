@@ -278,7 +278,7 @@ int demandeImportationImage(char *question, tImage *image)
         return demandeImportationImage(question, image);
     }
 
-    printf(u8"Fichier importé.\n");
+    printf("Fichier importé.\n");
     return 0;
 }
 
@@ -290,11 +290,11 @@ int main()
         {
             "Transformer une image en niveau de gris",
             "Flouter une image",
-            u8"Détourer une image",
+            "Détourer une image",
             "Dissimuler une image dans une autre",
-            u8"Révéler une image cachée dans une autre",
+            "Révéler une image cachée dans une autre",
             "Dissimuler du texte dans une image",
-            u8"Révéler un texte caché dans une image",
+            "Révéler un texte caché dans une image",
             "Changer d'image source",
             "Sauvegarder l'image",
             "Quitter"
@@ -324,16 +324,16 @@ int main()
     int rFlou = 0;
 
     #ifdef _WIN32
-        
+        SetConsoleOutputCP(CP_UTF8);
     #endif
 
     while (selection != QUITTER)
     {
-        selection = menu(MENU, 10, u8"Quelle opération voulez-vous effectuer ?");
+        selection = menu(MENU, 10, "Quelle opération voulez-vous effectuer ?");
 
         if(selection < IMPORT && source.largeur == 0)
         { 
-            demandeImportationImage(u8"Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n", &source); 
+            demandeImportationImage("Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n", &source); 
         }
 
         switch (selection)
@@ -357,19 +357,19 @@ int main()
             break;
 
         case DETOUR:
-            printf(u8"Détourage de l'image par flou gaussien...\n");
+            printf("Détourage de l'image par flou gaussien...\n");
             document = contours(source);
             break;
 
         case DISSIMULE_IMG:
-            demandeImportationImage(u8"Entrez le nom du fichier image à dissimuler à l'interieur:\n", &source1);
+            demandeImportationImage("Entrez le nom du fichier image à dissimuler à l'interieur:\n", &source1);
             printf("Dissimulation de l'image dans l'image source...\n");
             document = cacheImage(source, source1);
             free(source1.img);
             break;
 
         case REVELE_IMG:
-            printf(u8"Tentative de récupération d'une image caché dans l'image source...\n");
+            printf("Tentative de récupération d'une image caché dans l'image source...\n");
             document = reveleImage(source);
             break;
 
@@ -388,21 +388,21 @@ int main()
             if(source.largeur != 0){
                 free(source.img);
              }
-            demandeImportationImage(u8"Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n", &source); 
+            demandeImportationImage("Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n", &source); 
             break;
 
         case SAUV:
 
             if(document.largeur == 0) 
             { 
-                printf(u8"Pas d'image modifiée à sauvegarder.\n");
+                printf("Pas d'image modifiée à sauvegarder.\n");
                 break;
             }
 
             if(demandeChemin("Choissisez un nom de fichier pour sauvegarder votre image:\n", str) == 0 && str[0] != 0 && strlen(str) > 3)
             {
                 sauvePnm(str, document);
-                printf(u8"Fichier %s enregistré.\n", str);
+                printf("Fichier %s enregistré.\n", str);
             }
             else { printf("nom invalide.\n"); }
 
@@ -414,12 +414,12 @@ int main()
 
         if(selection < REVELE_TXT && document.largeur > 0)
         { 
-            printf(u8"Opération effectuée.\n"); 
+            printf("Opération effectuée.\n"); 
         }
 
         if(selection != QUITTER)
         {
-            printf(u8"Appuyez sur (Entrée) pour faire d'autres opérations\n");
+            printf("Appuyez sur (Entrée) pour faire d'autres opérations\n");
 
             if(selection < IMPORT){
                 printf("ou entrez un nom de fichier pour sauvegarder votre image et quitter:\n");
@@ -435,7 +435,7 @@ int main()
             else if(selection < IMPORT && strlen(str) > 3 && !menu(MENU_YN, 2, "Souhaiter-vous vraiment sauvegarder et quitter ?"))
             {
                 sauvePnm(str, document);
-                printf(u8"Fichier %s enregistré.\n", str);
+                printf("Fichier %s enregistré.\n", str);
                 selection = QUITTER;
             }
         }
