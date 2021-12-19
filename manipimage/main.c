@@ -60,7 +60,7 @@ int menu(const char **choix, int nbChoix, char* titre)
     origineConsole++;
 
     struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);//récupère la hauteur / capacité de nombre de ligne à l'écran de la console
 
     if(origineConsole + nbChoix > w.ws_row)//corige l'origine si ça dépasse la hauteur de la console
     {
@@ -87,12 +87,12 @@ int menu(const char **choix, int nbChoix, char* titre)
 
         if (c >= ASCII_0 && c <= ASCII_0 + 9) // Le controle du tableau par valeur numérique ne fonctionnera pas pour des valeurs de choix superieur à 9
         {
-            selection = c - ASCII_0;
+            selection = c - ASCII_0 - 1;
             if (selection > nbChoix)
             {
                 selection = selectionPred;
             }
-            if (selection == 0)
+            if (selection == -1)
             {
                 selection = nbChoix - 1;
             }
@@ -139,34 +139,31 @@ int menu(const char **choix, int nbChoix, char* titre)
 
 int menu(const char **choix, int nbChoix, char* titre)
 {
-    HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    HANDLE hConsoleOutput = GetStdHandle(STD_OUTPUT_HANDLE);//récupère le handle(un pointeur utilisable dans le winapi) qui fait référence au stdout de la console
     int origineConsole = 0;
     char str[8];
 
     CONSOLE_SCREEN_BUFFER_INFO csbi;
-    BOOL ok = GetConsoleScreenBufferInfo(hConsoleOutput, &csbi);
+    BOOL ok = GetConsoleScreenBufferInfo(hConsoleOutput, &csbi);// récupère la structure CONSOLE_SCREEN_BUFFER_INFO qui donne entre autre des infos sur la position du curseur de la console
 
     origineConsole = csbi.dwCursorPosition.Y;
 
-    if (origineConsole > 16)
-    {
-
-    }
-
     printf("%s\n", titre);
 
-    for (int i = 0; i < nbChoix - 1; i++)
+    for (int i = 0; i < nbChoix - 1; i++) //print le menu
     {
         printf("%d. %s\n", i + 1, choix[i]);
     }
 
+   //print le dernier élément du menu + le "Choix ==> ...":
     printf("0. ");
     SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes | COMMON_LVB_REVERSE_VIDEO); //inversion couleurs arière plan / premier plan
     printf("%s", choix[nbChoix - 1]);
-    SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes);
+    SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes); //rétablissment des couleur par défault
     printf("\nChoix ==> %s", choix[nbChoix - 1]);
+   //
 
-    SetConsoleCursorPosition(hConsoleOutput, (COORD){0, nbChoix + origineConsole});
+    SetConsoleCursorPosition(hConsoleOutput, (COORD){0, nbChoix + origineConsole});//met le curseur sur le dernier choix
 
     char selectionPred = nbChoix - 1;
     char selection = nbChoix - 1;
@@ -181,14 +178,14 @@ int menu(const char **choix, int nbChoix, char* titre)
 
         if (c >= ASCII_0 && c <= ASCII_0 + 9) // Le controle du tableau par valeur numérique ne fonctionnera pas pour des valeurs de choix superieur à 9
         {
-            selection = c - ASCII_0;
+            selection = c - ASCII_0 - 1;
             if (selection > nbChoix)
             {
                 selection = selectionPred;
             }
-            if (selection == 0)
+            if (selection == -1)
             {
-                selection = nbChoix;
+                selection = nbChoix - 1;
             }
         }
 
@@ -214,27 +211,24 @@ int menu(const char **choix, int nbChoix, char* titre)
 
         if (selection != selectionPred)
         {
-            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selection + origineConsole + 1});
+            int n = 0;
+
+            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selection + origineConsole + 1}); // met le curseur avant le texte que l'on veut réécrire avec d'autres couleurs
             SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes | COMMON_LVB_REVERSE_VIDEO); //inversion couleurs arière plan / premier plan
             printf("%s", choix[selection]);
 
-            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selectionPred + origineConsole + 1});
+            SetConsoleCursorPosition(hConsoleOutput, (COORD){3, selectionPred + origineConsole + 1});//met le curseur avant là ou on veut rétablir la couleur par défault
             SetConsoleTextAttribute(hConsoleOutput, csbi.wAttributes);
-            printf("%s", choix[selectionPred]);
+            printf("%s", choix[selectionPred]);                         //réécrit le texte avec les couleurs par défault pour enlever 'l'aspect séléction'
 
             SetConsoleCursorPosition(hConsoleOutput, (COORD){0, origineConsole + nbChoix + 1});
-            printf("Choix ==> %s", choix[selection]);
+            printf("Choix ==> %s", choix[selection]);//réécrit le choix actuelle par dessus le précédant
 
-            int predDiff = strlen(choix[selectionPred]) - strlen(choix[selection]);
+            int predDiff = strlen(choix[selectionPred]) - strlen(choix[selection]);// différence de nombre de charactère par rapport à la séléction précédante
 
             if (predDiff)
-            { // si le texte de l'ancienne selection est plus grande il faut effacer les caractères 'qui dépassent'
-                int n = 0;
-                FillConsoleOutputCharacterA(hConsoleOutput, ' ', predDiff, (COORD){10 + strlen(choix[selection]), origineConsole + nbChoix + 1}, &n);
-                FillConsoleOutputAttribute(
-                    hConsoleOutput, csbi.wAttributes,
-                    predDiff, (COORD) { 10 + strlen(choix[selection]), origineConsole + nbChoix + 1 }, &n
-                );
+            { // si le texte de l'ancienne selection est plus long il faut effacer les caractères 'qui dépassent'               
+                FillConsoleOutputCharacterA(hConsoleOutput, ' ', predDiff, (COORD) { 10 + strlen(choix[selection]), origineConsole + nbChoix + 1 }, & n); 
             }
 
             selectionPred = selection;
@@ -248,7 +242,7 @@ int menu(const char **choix, int nbChoix, char* titre)
 
 #endif
 
-int demandeChemin(char *question, char *chemin)
+int demandeChemin(char* question, char* chemin)//demande un fichier avec une question
 {
     printf("%s", question);
 
@@ -257,12 +251,12 @@ int demandeChemin(char *question, char *chemin)
         return -1;
     }
 
-    chemin[strcspn(chemin, "\n")] = 0;
+    chemin[strcspn(chemin, "\n")] = 0;//enlève la fin de ligne
 
     return 0;
 }
 
-int demandeImportationImage(char *question, tImage *image)
+int demandeImportationImage(char* question, tImage* image)//demande et charge un fichier image dans un tImage
 {
     char reponse[256];
 
@@ -324,14 +318,14 @@ int main()
     int rFlou = 0;
 
     #ifdef _WIN32
-        SetConsoleOutputCP(CP_UTF8);
+        SetConsoleOutputCP(CP_UTF8);//pour passer la console en utf8 sur Windows pour afficher les accents
     #endif
 
     while (selection != QUITTER)
     {
-        selection = menu(MENU, 10, "Quelle opération voulez-vous effectuer ?");
+        selection = menu(MENU, 10, "Quelle opération voulez-vous effectuer ?");//lance le menu pricipale
 
-        if(selection < IMPORT && source.largeur == 0)
+        if(selection < IMPORT && source.largeur == 0)//toutes les premières options requièrent un fichier image et 'import' est géré séparement
         { 
             demandeImportationImage("Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n", &source); 
         }
@@ -388,7 +382,7 @@ int main()
             if(source.largeur != 0){
                 free(source.img);
              }
-            demandeImportationImage("Choisissez un fichier à ouvrir (.pnm | .ppm | .pgm) :\n", &source); 
+            demandeImportationImage("Choisissez un fichier à importerà la place du précédant (.pnm | .ppm | .pgm) :\n", &source); 
             break;
 
         case SAUV:
@@ -427,12 +421,12 @@ int main()
 
             demandeChemin("", str);
 
-            if(str[0] == 0 && document.largeur != 0)
+            if(str[0] == 0 && document.largeur != 0)// a appuyé sur entrée
             {
                 free(source.img);
                 source = copieImage(document);
             }
-            else if(selection < IMPORT && strlen(str) > 3 && !menu(MENU_YN, 2, "Souhaiter-vous vraiment sauvegarder et quitter ?"))
+            else if(selection < IMPORT && strlen(str) > 3 && !menu(MENU_YN, 2, "Souhaiter-vous vraiment sauvegarder et quitter ?"))// a entré un nom de fichier
             {
                 sauvePnm(str, document);
                 printf("Fichier %s enregistré.\n", str);

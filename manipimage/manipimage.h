@@ -25,8 +25,6 @@ typedef struct image {
     tPixel** img;       // Le tableau des pixels
 } tImage;
 
-static const struct image ImageVide = { 0, 0 };
-
 tImage initImage(int haut, int larg, char typ[3], int vmax);
 
 tImage copieImage(tImage im);

@@ -65,28 +65,28 @@ tImage chargePnm(char* fichier)
     if (!(pFile = fopen(fichier, "r")))
     {
         fprintf(stderr, "\nErreur dans chargePnm : %s innaccessible", fichier);
-        return ImageVide;
+        return initImage(0, 0, "", 0);
     }
 
     //  Copie le type P1/P2/P3.. + terminateur null et verifie si ça fini bien par NULL
     if (!fscanf(pFile, "%3s\n", str) || str[2] != 0)
     {
         perror("Type invalide ou à plus de 2 caractères.");
-        return ImageVide;
+        return initImage(0, 0, "", 0);
     }
 
     //  Saute le commentaire, %* : pas stocké dans une variable, [^\n] : pattern 'tout sauf /n'
     if (fscanf(pFile, "%*[^\n]\n") != 0)
     {
         perror("Erreur lors de la lecture de la ligne de commentaire.");
-        return ImageVide;
+        return initImage(0, 0, "", 0);
     }
 
     //  Copie la largeur, hauteur et la valeur maximum des pixels
     if (!fscanf(pFile, "%d %d\n%d\n", &largeur, &hauteur, &vmax))
     {
         perror("Erreur lors de la lecture des entiers de parametre.");
-        return ImageVide;
+        return initImage(0, 0, "", 0);
     }
 
     if (vmax > 255)// Le type de tPixel.r .v et .b est unsigned char. Il faudrait faire un autre struct dans le .h pour prendre en charge des plus grande valeurs
