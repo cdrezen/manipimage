@@ -340,7 +340,7 @@ int main()
 
         case FLOUTE:
             rFlou = 0;
-            while (rFlou < 1 || rFlou > 20)
+            while (rFlou < 1 || rFlou > 20) //demande un rayon entre 1 et 20 jusqu'a ce qu'il soit donné:
             {
                 printf("Choisissez un rayon (entre 1 et 20 px):\n");                
                 if (!fgets(str, 256, stdin) || !sscanf(str, "%d", &rFlou)) 
@@ -378,7 +378,7 @@ int main()
             printf("Opération effectuée.\n");
             break;
         
-        case IMPORT:
+        case IMPORT: // libère l'ancienne image source si elle n'est pas vide et la remplace par l'image donnée
             if(source.largeur != 0){
                 free(source.img);
              }
@@ -434,6 +434,8 @@ int main()
             }
         }
     }
+
+    //libère la mémoire si elle est utilisé dans pour des tImage:
 
     if(source.largeur != 0){
         free(source.img);
